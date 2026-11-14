@@ -4,6 +4,7 @@ import BookingForm from './components/BookingForm';
 import LiveTracking from './components/LiveTracking';
 import RiderConsole from './components/RiderConsole';
 import ReconciliationHub from './components/ReconciliationHub';
+import AuthGate from './components/AuthGate';
 import { KANO_LANDMARKS } from './data/kanoLandmarks';
 
 // Initial realistic Kano intra-state pilot orders
@@ -96,6 +97,18 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('tab') || 'booking';
   });
+
+  // Dark / Light Theme
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('fimrash_theme') || 'dark';
+  });
+
+  // Role-Based Auth User
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('fimrash_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [deliveries, setDeliveries] = useState(() => {
     const saved = localStorage.getItem('fimrash_deliveries');
     return saved ? JSON.parse(saved) : INITIAL_DELIVERIES;
@@ -107,6 +120,22 @@ export default function App() {
   });
 
   const [activeTrackingCode, setActiveTrackingCode] = useState(null);
+
+  // Sync Theme to HTML class
+  useEffect(() => {
+    document.documentElement.classList.remove('dark', 'light');
+    document.documentElement.classList.add(theme);
+    localStorage.setItem('fimrash_theme', theme);
+  }, [theme]);
+
+  // Sync Auth User
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('fimrash_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('fimrash_user');
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     localStorage.setItem('fimrash_deliveries', JSON.stringify(deliveries));
@@ -153,23 +182,35 @@ export default function App() {
     }));
   };
 
+  const handleLogout = () => {
+    setCurrentUser(null);
+    if (activeTab === 'rider' || activeTab === 'ledger') {
+      setActiveTab('booking');
+    }
+  };
+
   const activeDeliveriesCount = deliveries.filter(d => d.status !== 'delivered').length;
 
   return (
-    <div className="min-h-screen bg-ambient-grid text-slate-100 flex flex-col font-sans relative selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen bg-ambient-grid text-slate-100 dark:text-slate-100 flex flex-col font-sans relative selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-300">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         activeDeliveriesCount={activeDeliveriesCount}
+        theme={theme}
+        setTheme={setTheme}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
+      {/* Main Content with Mobile Bottom Padding for App Dock */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-28 md:pb-8 relative z-10">
+        {/* Tab 1: Booking (Public) */}
         {activeTab === 'booking' && (
-          <BookingForm onDeliveryCreated={(d) => {
-            handleDeliveryCreated(d);
-          }} />
+          <BookingForm onDeliveryCreated={handleDeliveryCreated} />
         )}
 
+        {/* Tab 2: Tracking (Public) */}
         {activeTab === 'tracking' && (
           <LiveTracking
             deliveries={deliveries}
@@ -177,29 +218,47 @@ export default function App() {
           />
         )}
 
+        {/* Tab 3: Rider Console (Protected: Courier Only) */}
         {activeTab === 'rider' && (
-          <RiderConsole
-            deliveries={deliveries}
-            onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
-            onVerifyOtpAndDeliver={handleVerifyOtpAndDeliver}
-          />
+          currentUser && (currentUser.role === 'rider' || currentUser.role === 'admin') ? (
+            <RiderConsole
+              deliveries={deliveries}
+              onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
+              onVerifyOtpAndDeliver={handleVerifyOtpAndDeliver}
+            />
+          ) : (
+            <AuthGate
+              targetRole="rider"
+              onLoginSuccess={(user) => setCurrentUser(user)}
+              theme={theme}
+            />
+          )
         )}
 
+        {/* Tab 4: COD Settlement Hub (Protected: Operations Admin Only) */}
         {activeTab === 'ledger' && (
-          <ReconciliationHub
-            deliveries={deliveries}
-            riderCashInHand={riderCashInHand}
-            onSettleVendorPayout={handleSettleVendorPayout}
-          />
+          currentUser && currentUser.role === 'admin' ? (
+            <ReconciliationHub
+              deliveries={deliveries}
+              riderCashInHand={riderCashInHand}
+              onSettleVendorPayout={handleSettleVendorPayout}
+            />
+          ) : (
+            <AuthGate
+              targetRole="admin"
+              onLoginSuccess={(user) => setCurrentUser(user)}
+              theme={theme}
+            />
+          )
         )}
       </main>
 
-      {/* Luxury Footer */}
-      <footer className="border-t border-white/5 bg-slate-950/80 backdrop-blur-md py-6 text-xs text-slate-400 relative z-10">
+      {/* Luxury Footer (Hidden or streamlined on small screens) */}
+      <footer className="border-t border-white/5 dark:border-white/5 bg-slate-950/80 dark:bg-slate-950/80 backdrop-blur-md py-6 text-xs text-slate-400 relative z-10 mb-14 md:mb-0">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-            <span className="font-black text-white tracking-tight">FIMRASH LOGISTICS SERVICES</span>
+            <span className="font-black text-white dark:text-white tracking-tight">FIMRASH LOGISTICS SERVICES</span>
             <span className="text-slate-600">|</span>
             <span className="text-slate-400">Kano Intra-State Metropolitan Mesh</span>
           </div>
