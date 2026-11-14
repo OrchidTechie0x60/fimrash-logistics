@@ -1,0 +1,23 @@
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# PHP / Composer
+vendor/
+composer.phar
+.env
+.env.backup
+.phpunit.result.cache
+
+# Logs & databases
+*.log
+*.sqlite
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
