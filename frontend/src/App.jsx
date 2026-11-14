@@ -285,72 +285,74 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      {/* Main Content with Mobile Bottom Padding for App Dock */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-28 md:pb-8 relative z-10">
-        {/* Tab 1: Booking Form (Public - Standard Sized) */}
-        {activeTab === 'booking' && (
-          <BookingForm onDeliveryCreated={handleDeliveryCreated} />
-        )}
+      {/* Main Content Area offset by the permanent vertical left sidebar on desktop */}
+      <div className="flex-1 flex flex-col min-w-0 md:pl-64 lg:pl-72 transition-all">
+        <main className="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-28 md:pb-8 relative z-10">
+          {/* Tab 1: Booking Form (Public - Standard Sized) */}
+          {activeTab === 'booking' && (
+            <BookingForm onDeliveryCreated={handleDeliveryCreated} />
+          )}
 
-        {/* Tab 2: Live Tracking (Public) */}
-        {activeTab === 'tracking' && (
-          <LiveTracking
-            deliveries={deliveries}
-            activeTrackingCode={activeTrackingCode}
-          />
-        )}
-
-        {/* Tab 3: Courier Console (Protected: Courier Only) */}
-        {activeTab === 'rider' && (
-          currentUser && (currentUser.role === 'rider' || currentUser.role === 'admin') ? (
-            <RiderConsole
+          {/* Tab 2: Live Tracking (Public) */}
+          {activeTab === 'tracking' && (
+            <LiveTracking
               deliveries={deliveries}
-              onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
-              onVerifyOtpAndDeliver={handleVerifyOtpAndDeliver}
+              activeTrackingCode={activeTrackingCode}
             />
-          ) : (
-            <AuthGate
-              targetRole="rider"
-              onLoginSuccess={(user) => setCurrentUser(user)}
-              theme={theme}
-            />
-          )
-        )}
+          )}
 
-        {/* Tab 4: Delivery Ledger & Cash Vault (Protected: Station Admin Only) */}
-        {activeTab === 'ledger' && (
-          currentUser && currentUser.role === 'admin' ? (
-            <ReconciliationHub
-              deliveries={deliveries}
-              riderCashInHand={riderCashInHand}
-              onRemitRiderCash={handleRemitRiderCash}
-            />
-          ) : (
-            <AuthGate
-              targetRole="admin"
-              onLoginSuccess={(user) => setCurrentUser(user)}
-              theme={theme}
-            />
-          )
-        )}
-      </main>
+          {/* Tab 3: Courier Console (Protected: Courier Only) */}
+          {activeTab === 'rider' && (
+            currentUser && (currentUser.role === 'rider' || currentUser.role === 'admin') ? (
+              <RiderConsole
+                deliveries={deliveries}
+                onUpdateDeliveryStatus={handleUpdateDeliveryStatus}
+                onVerifyOtpAndDeliver={handleVerifyOtpAndDeliver}
+              />
+            ) : (
+              <AuthGate
+                targetRole="rider"
+                onLoginSuccess={(user) => setCurrentUser(user)}
+                theme={theme}
+              />
+            )
+          )}
 
-      {/* Calm Institutional Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md py-6 text-xs text-slate-500 dark:text-slate-400 relative z-10 mb-14 md:mb-0">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-            <span className="font-bold text-slate-900 dark:text-white tracking-tight">FIMRASH LOGISTICS SERVICES</span>
-            <span className="text-slate-300 dark:text-slate-700">|</span>
-            <span>Kano Intra-State Goods &amp; Parcel Dispatch</span>
+          {/* Tab 4: Delivery Ledger & Cash Vault (Protected: Station Admin Only) */}
+          {activeTab === 'ledger' && (
+            currentUser && currentUser.role === 'admin' ? (
+              <ReconciliationHub
+                deliveries={deliveries}
+                riderCashInHand={riderCashInHand}
+                onRemitRiderCash={handleRemitRiderCash}
+              />
+            ) : (
+              <AuthGate
+                targetRole="admin"
+                onLoginSuccess={(user) => setCurrentUser(user)}
+                theme={theme}
+              />
+            )
+          )}
+        </main>
+
+        {/* Calm Institutional Footer */}
+        <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md py-6 text-xs text-slate-500 dark:text-slate-400 relative z-10 mb-14 md:mb-0">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+              <span className="font-bold text-slate-900 dark:text-white tracking-tight">FIMRASH LOGISTICS SERVICES</span>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span>Kano Intra-State Goods &amp; Parcel Dispatch</span>
+            </div>
+            <div className="flex items-center space-x-3 text-[11px]">
+              <span>Hubs: Gyadi-Gyadi • Naibawa • Kwari • BUK</span>
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Engineered by OrchidByte Solutions</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-3 text-[11px]">
-            <span>Hubs: Kantin Kwari • Singer • Farm Centre • Nassarawa GRA</span>
-            <span className="text-slate-300 dark:text-slate-700">•</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Engineered by OrchidByte Solutions</span>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }
