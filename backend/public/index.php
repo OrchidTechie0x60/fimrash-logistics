@@ -215,3 +215,4 @@ try {
     }
     jsonResponse(['error' => 'Server error', 'details' => $e->getMessage()], 500);
 }
+

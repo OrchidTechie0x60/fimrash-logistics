@@ -75,3 +75,4 @@ CREATE TABLE IF NOT EXISTS cod_ledger (
     collected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     settled_at TIMESTAMP NULL
 );
+
