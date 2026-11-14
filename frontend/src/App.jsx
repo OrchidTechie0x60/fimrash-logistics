@@ -92,7 +92,10 @@ const INITIAL_DELIVERIES = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('booking');
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'booking';
+  });
   const [deliveries, setDeliveries] = useState(() => {
     const saved = localStorage.getItem('fimrash_deliveries');
     return saved ? JSON.parse(saved) : INITIAL_DELIVERIES;
