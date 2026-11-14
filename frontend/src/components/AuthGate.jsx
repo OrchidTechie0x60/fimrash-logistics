@@ -61,67 +61,52 @@ export default function AuthGate({ targetRole, onLoginSuccess, theme }) {
   };
 
   return (
-    <div className="max-w-md mx-auto py-6 sm:py-12 px-4">
-      <div className="glass-card rounded-3xl p-6 sm:p-8 border border-white/10 shadow-2xl relative overflow-hidden">
-        {/* Ambient Top Glow */}
-        <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl pointer-events-none ${
-          isRiderTarget ? 'bg-emerald-500/15' : 'bg-cyan-500/15'
-        }`} />
-
+    <div className="max-w-md mx-auto py-6 sm:py-10 px-4">
+      <div className="glass-card rounded-2xl p-6 sm:p-7 shadow-sm relative overflow-hidden">
         <div className="relative z-10">
           {/* Header Icon */}
-          <div className="flex items-center justify-between mb-6">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg ${
-              isRiderTarget 
-                ? 'bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-emerald-500/20' 
-                : 'bg-gradient-to-tr from-cyan-500 to-blue-500 text-slate-950 shadow-cyan-500/20'
-            }`}>
-              {isRiderTarget ? <Truck className="w-7 h-7" /> : <Shield className="w-7 h-7" />}
+          <div className="flex items-center justify-between mb-5">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-800 dark:text-slate-200">
+              {isRiderTarget ? <Truck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> : <Shield className="w-6 h-6 text-slate-700 dark:text-slate-300" />}
             </div>
 
             <div className="text-right">
-              <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                isRiderTarget
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                  : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-              }`}>
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 {isRiderTarget ? 'Fleet Restricted' : 'Finance Clearance'}
               </span>
             </div>
           </div>
 
-          <h2 className="text-2xl font-black text-white dark:text-white tracking-tight mb-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">
             {isRiderTarget ? 'Courier Field Sign-In' : 'Station Operations Gate'}
           </h2>
-          <p className="text-xs text-slate-400 mb-6">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">
             {isRiderTarget 
               ? 'Enter your Fimrash courier ID and 4-digit shift security PIN to access the Kano delivery queue.'
               : 'Authorized personnel only. Access to cash custody vault and vendor bank settlements is audited.'}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 {isRiderTarget ? 'Rider / Courier ID' : 'Station Controller Email'}
               </label>
-              <div className="relative">
-                <input
-                  type={isRiderTarget ? "text" : "email"}
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={isRiderTarget ? "e.g. RIDER-04" : "ops@fimrash.com"}
-                  className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition font-mono"
-                />
-              </div>
+              <input
+                type={isRiderTarget ? "text" : "email"}
+                required
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder={isRiderTarget ? "e.g. RIDER-04" : "ops@fimrash.com"}
+                className="w-full rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-mono transition"
+              />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-slate-300">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   {isRiderTarget ? '4-Digit Rider PIN' : 'Admin Security Key'}
                 </label>
-                <span className="text-[10px] text-slate-500">Demo PIN: 1234</span>
+                <span className="text-[10px] text-slate-400">Demo PIN: 1234</span>
               </div>
               <div className="relative">
                 <input
@@ -131,12 +116,12 @@ export default function AuthGate({ targetRole, onLoginSuccess, theme }) {
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
                   placeholder="••••"
-                  className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition font-mono tracking-widest"
+                  className="w-full rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-mono tracking-widest transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPin(!showPin)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-white"
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white"
                 >
                   {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -144,19 +129,15 @@ export default function AuthGate({ targetRole, onLoginSuccess, theme }) {
             </div>
 
             {error && (
-              <div className="bg-rose-950/50 border border-rose-500/30 text-rose-300 text-xs p-3 rounded-xl flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+              <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs p-2.5 rounded-lg flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
                 <span>{error}</span>
               </div>
             )}
 
             <button
               type="submit"
-              className={`w-full text-slate-950 font-black py-3.5 px-4 rounded-xl text-sm shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                isRiderTarget
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 shadow-emerald-500/20'
-                  : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 shadow-cyan-500/20'
-              }`}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer"
             >
               <span>{isRiderTarget ? 'Authenticate Courier' : 'Unlock Operations Hub'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -164,16 +145,16 @@ export default function AuthGate({ targetRole, onLoginSuccess, theme }) {
           </form>
 
           {/* Quick Demo Access Buttons */}
-          <div className="mt-6 pt-5 border-t border-white/10 space-y-2">
-            <span className="text-[10px] uppercase font-bold text-slate-500 block tracking-wider text-center">
+          <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-1.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider text-center">
               One-Tap Pilot Demo Login
             </span>
             <button
               type="button"
               onClick={() => handleQuickDemo(targetRole)}
-              className="w-full bg-slate-950 hover:bg-slate-900 border border-white/10 text-slate-200 text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center space-x-2 cursor-pointer"
+              className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition flex items-center justify-center space-x-2 cursor-pointer border border-slate-200 dark:border-slate-700"
             >
-              <UserCheck className="w-4 h-4 text-emerald-400" />
+              <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>
                 {isRiderTarget 
                   ? 'Quick Sign-In as Musa Garba (Rider #04)' 
