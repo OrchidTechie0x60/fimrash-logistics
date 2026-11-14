@@ -16,7 +16,12 @@ export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelect
     { id: 'post-office-murtala', name: 'Murtala Rd', label: 'Murtala Way / Post Office', x: 370, y: 200, zone: 'Zone 2' },
     { id: 'farm-centre', name: 'Farm Centre', label: 'Farm Centre GSM', x: 430, y: 250, zone: 'Zone 2' },
     { id: 'zoo-road', name: 'Zoo Road', label: 'Zoo Rd / Sahad Stores', x: 310, y: 270, zone: 'Zone 2' },
-    { id: 'tarauni-gra', name: 'Tarauni', label: 'Tarauni Residential', x: 440, y: 310, zone: 'Zone 3' },
+    { id: 'gyadi-gyadi', name: 'Gyadi-Gyadi', label: 'Gyadi-Gyadi / Court Rd', x: 390, y: 295, zone: 'Zone 2' },
+    { id: 'naibawa', name: 'Naibawa', label: 'Naibawa / Yan Lemo', x: 380, y: 345, zone: 'Zone 3' },
+    { id: 'tarauni-gra', name: 'Tarauni', label: 'Tarauni Residential', x: 450, y: 305, zone: 'Zone 3' },
+    { id: 'janbulo-dorayi', name: 'Janbulo', label: 'Janbulo / Dorayi', x: 160, y: 220, zone: 'Zone 3' },
+    { id: 'rijiyar-zaki', name: 'Rijiyar Zaki', label: 'Rijiyar Zaki / Gwarzo', x: 100, y: 195, zone: 'Zone 4' },
+    { id: 'kurna-rijiyar-lemo', name: 'Kurna', label: 'Kurna / Katsina Rd', x: 250, y: 75, zone: 'Zone 4' },
     { id: 'sharada-industrial', name: 'Sharada', label: 'Sharada Industrial', x: 200, y: 290, zone: 'Zone 4' },
     { id: 'hotoro-gra', name: 'Hotoro', label: 'Hotoro GRA / NNPC', x: 530, y: 270, zone: 'Zone 3' }
   ];

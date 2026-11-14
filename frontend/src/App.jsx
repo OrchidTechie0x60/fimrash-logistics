@@ -10,6 +10,31 @@ import { KANO_LANDMARKS } from './data/kanoLandmarks';
 // Standard Kano intra-state parcel deliveries (Courier delivery fee only)
 const INITIAL_DELIVERIES = [
   {
+    id: 'del_100',
+    trackingCode: 'FMR-KN-1092',
+    otpCode: '3419',
+    status: 'in_transit',
+    senderName: "Hafsat's Pastry & Cakes (Home Kitchen)",
+    senderPhone: '08035557788',
+    senderLandmark: KANO_LANDMARKS.find(l => l.id === 'gyadi-gyadi'),
+    senderDetail: 'House No. 8, Behind Veterinary Clinic, Court Road, Gyadi-Gyadi',
+    recipientName: 'Amina Sani',
+    recipientPhone: '08144445566',
+    recipientLandmark: KANO_LANDMARKS.find(l => l.id === 'naibawa'),
+    recipientDetail: 'Near Jallaba Juma\'at Mosque, Yan Lemo, Naibawa',
+    itemCategory: 'Cakes, Pastries & Bakes',
+    itemDescription: '10-inch Red Velvet Birthday Cake (Keep Upright!)',
+    paymentMode: 'pay_on_delivery',
+    deliveryFee: 900,
+    feeCollected: false,
+    assignedRider: {
+      name: 'Musa Garba (Rider #04)',
+      phone: '08156661246',
+      bikeNumber: 'KN-942-TRN'
+    },
+    createdAt: '01:15 PM'
+  },
+  {
     id: 'del_101',
     trackingCode: 'FMR-KN-2849',
     otpCode: '7214',

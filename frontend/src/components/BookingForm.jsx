@@ -4,21 +4,25 @@ import KanoRouteMap from './KanoRouteMap';
 import { 
   MapPin, Navigation, Package, DollarSign, ShieldCheck, ArrowRight, 
   CheckCircle2, Copy, Sparkles, Phone, MessageSquare, Clock, Zap, Store,
-  Compass, ChevronDown, ChevronUp
+  Compass, ChevronDown, ChevronUp, Home, Building2, Utensils, AlertCircle
 } from 'lucide-react';
 
 export default function BookingForm({ onDeliveryCreated }) {
   const [formData, setFormData] = useState({
+    senderType: 'home', // 'home' | 'market' | 'office'
     senderName: '',
     senderPhone: '',
-    senderLandmark: 'kwari-textiles',
+    senderLandmark: 'gyadi-gyadi', // Default to active residential hub
     senderDetail: '',
+    recipientType: 'home',
     recipientName: '',
     recipientPhone: '',
-    recipientLandmark: 'nassarawa-gra',
+    recipientLandmark: 'naibawa', // Default recipient
     recipientDetail: '',
-    itemCategory: 'Fabrics & Textiles',
+    itemCategory: 'Cakes, Pastries & Bakes',
     itemDescription: '',
+    isFragile: true,
+    deliveryNote: '',
     paymentMode: 'pay_on_delivery', // 'pay_on_delivery' or 'prepaid'
   });
 
@@ -26,28 +30,39 @@ export default function BookingForm({ onDeliveryCreated }) {
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const selectedSenderLandmark = KANO_LANDMARKS.find(l => l.id === formData.senderLandmark) || KANO_LANDMARKS[0];
-  const selectedRecipientLandmark = KANO_LANDMARKS.find(l => l.id === formData.recipientLandmark) || KANO_LANDMARKS[6];
+  const selectedSenderLandmark = KANO_LANDMARKS.find(l => l.id === formData.senderLandmark) || KANO_LANDMARKS[5];
+  const selectedRecipientLandmark = KANO_LANDMARKS.find(l => l.id === formData.recipientLandmark) || KANO_LANDMARKS[8];
 
   const deliveryFee = calculateDeliveryFare(formData.senderLandmark, formData.recipientLandmark);
 
-  // Standard Categories for Kano Goods & Parcels
+  // Inclusive Categories for Kano: Home Businesses, Markets & Personal Errands
   const CATEGORIES = [
-    { id: 'Fabrics & Textiles', label: 'Fabrics / Shadda / Lace', icon: '🧵' },
-    { id: 'Phones & Gadgets', label: 'Electronics & Phones', icon: '📱' },
-    { id: 'Cosmetics & Beauty', label: 'Cosmetics & Perfumes', icon: '✨' },
-    { id: 'Documents & Letters', label: 'Documents & Papers', icon: '📄' },
-    { id: 'Footwear & Bags', label: 'Shoes, Bags & Leather', icon: '👞' },
-    { id: 'Food & Provisions', label: 'Groceries & Provisions', icon: '📦' },
+    { id: 'Cakes, Pastries & Bakes', label: 'Cakes, Pastries & Snacks', icon: '🎂', badge: 'Upright Care' },
+    { id: 'Food & Home Catering', label: 'Cooked Meals & Food', icon: '🍲', badge: 'Fresh Delivery' },
+    { id: 'Fabrics & Fashion', label: 'Fabrics, Abayas & Fashion', icon: '🧵', badge: 'Boutique' },
+    { id: 'Perfumes & Cosmetics', label: 'Perfumes, Oils & Cosmetics', icon: '✨', badge: 'Fragrance' },
+    { id: 'Phones & Gadgets', label: 'Electronics & Phones', icon: '📱', badge: 'Secure' },
+    { id: 'Documents & Certificates', label: 'Documents & Letters', icon: '📄', badge: 'Priority' },
+    { id: 'Personal Items & Errands', label: 'Personal Errands & Goods', icon: '📦', badge: 'General' },
   ];
 
-  // Popular Kano Corridors for 1-click select
+  // Popular Kano Corridors (Home Businesses & Markets)
   const POPULAR_PRESETS = [
-    { label: 'Kwari → Nassarawa GRA', from: 'kwari-textiles', to: 'nassarawa-gra' },
-    { label: 'Farm Centre → BUK Campus', from: 'farm-centre', to: 'buk-new-campus' },
-    { label: 'Singer Market → Zoo Road', from: 'singer-market', to: 'zoo-road' },
-    { label: 'Kwari → Hotoro GRA', from: 'kwari-textiles', to: 'hotoro-gra' },
+    { label: '🎂 Gyadi-Gyadi → Naibawa (Home Baker)', from: 'gyadi-gyadi', to: 'naibawa', category: 'Cakes, Pastries & Bakes' },
+    { label: '🍲 Gyadi-Gyadi → Hotoro GRA (Catering)', from: 'gyadi-gyadi', to: 'hotoro-gra', category: 'Food & Home Catering' },
+    { label: '🧵 Kwari → Nassarawa GRA (Textiles)', from: 'kwari-textiles', to: 'nassarawa-gra', category: 'Fabrics & Fashion' },
+    { label: '📦 Tarauni → BUK Campus (Student Errand)', from: 'tarauni-gra', to: 'buk-new-campus', category: 'Personal Items & Errands' },
+    { label: '📱 Farm Centre → Zoo Road (Gadgets)', from: 'farm-centre', to: 'zoo-road', category: 'Phones & Gadgets' },
   ];
+
+  const handleApplyPreset = (preset) => {
+    setFormData(prev => ({
+      ...prev,
+      senderLandmark: preset.from,
+      recipientLandmark: preset.to,
+      itemCategory: preset.category || prev.itemCategory,
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -61,16 +76,20 @@ export default function BookingForm({ onDeliveryCreated }) {
       trackingCode,
       otpCode,
       status: 'pending',
-      senderName: formData.senderName || 'Al-Ihsan Textiles',
+      senderType: formData.senderType,
+      senderName: formData.senderName || (formData.senderType === 'home' ? 'Fatima Bakes' : 'Al-Ihsan Textiles'),
       senderPhone: formData.senderPhone || '08031112233',
       senderLandmark: selectedSenderLandmark,
-      senderDetail: formData.senderDetail || 'Block B, Line 3, Shop 14',
-      recipientName: formData.recipientName || 'Hajiya Maryam',
+      senderDetail: formData.senderDetail || (formData.senderType === 'home' ? 'House 14, Behind Veterinary Clinic, Court Road' : 'Block B, Line 3, Shop 14'),
+      recipientType: formData.recipientType,
+      recipientName: formData.recipientName || 'Amina Sani',
       recipientPhone: formData.recipientPhone || '08156661246',
       recipientLandmark: selectedRecipientLandmark,
-      recipientDetail: formData.recipientDetail || 'Coronation Hall Road',
+      recipientDetail: formData.recipientDetail || 'Near Central Mosque, Naibawa',
       itemCategory: formData.itemCategory,
-      itemDescription: formData.itemDescription || 'Standard Parcel Package',
+      itemDescription: formData.itemDescription || 'Home Baked Goods / Parcel',
+      isFragile: formData.isFragile,
+      deliveryNote: formData.deliveryNote,
       deliveryFee,
       paymentMode: formData.paymentMode,
       feeCollected: false,
@@ -107,12 +126,12 @@ export default function BookingForm({ onDeliveryCreated }) {
                 <span className="text-xs font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
                   Dispatch Confirmed
                 </span>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Waybill Logged</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Waybill Generated</h2>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="text-xs uppercase font-semibold text-slate-400 block">Waybill Number</span>
+              <span className="text-xs uppercase font-semibold text-slate-400 block">Consignment Code</span>
               <div className="text-xl font-mono font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                 <span>{bookingSuccess.trackingCode}</span>
                 <button
@@ -132,16 +151,16 @@ export default function BookingForm({ onDeliveryCreated }) {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2 text-amber-800 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4" />
-                <span>Recipient Delivery OTP Handshake</span>
+                <span>Recipient 4-Digit Handshake OTP</span>
               </div>
               <span className="text-[11px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-0.5 rounded">
-                Recipient Private Code
+                Recipient Private Pass
               </span>
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-sm">
-                Provide this 4-digit code to the courier <span className="font-semibold underline">only after receiving your parcel</span> to confirm successful delivery.
+                Recipient shares this 4-digit code with the courier <span className="font-semibold underline">only after receiving the item</span>.
               </p>
               <div className="text-3xl font-mono font-bold text-amber-900 dark:text-amber-400 tracking-widest bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-amber-300 dark:border-amber-700/50 shadow-sm text-center">
                 {bookingSuccess.otpCode}
@@ -149,60 +168,68 @@ export default function BookingForm({ onDeliveryCreated }) {
             </div>
           </div>
 
-          {/* Delivery & Routing Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm mb-6 bg-slate-50 dark:bg-slate-900/60 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div className="border-l-2 border-emerald-600 dark:border-emerald-500 pl-3.5 space-y-1">
-              <span className="text-slate-400 text-xs uppercase font-bold block">1. Pickup</span>
-              <span className="font-bold text-slate-900 dark:text-white block text-sm">{bookingSuccess.senderLandmark.name}</span>
-              <span className="text-slate-500 dark:text-slate-400 text-xs block">{bookingSuccess.senderDetail}</span>
-              <span className="text-slate-500 dark:text-slate-400 text-xs block pt-1">Sender: {bookingSuccess.senderName} ({bookingSuccess.senderPhone})</span>
+          {/* Route & Fee Breakdown */}
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3 text-xs sm:text-sm">
+            <div className="flex justify-between items-start pb-2 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Pickup Location</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {bookingSuccess.senderLandmark.name}
+                </span>
+                <span className="text-slate-500 block text-xs">{bookingSuccess.senderDetail}</span>
+                <span className="text-slate-400 block text-[11px] mt-0.5">Sender: {bookingSuccess.senderName}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Delivery Location</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {bookingSuccess.recipientLandmark.name}
+                </span>
+                <span className="text-slate-500 block text-xs">{bookingSuccess.recipientDetail}</span>
+                <span className="text-slate-400 block text-[11px] mt-0.5">Recipient: {bookingSuccess.recipientName}</span>
+              </div>
             </div>
 
-            <div className="border-l-2 border-slate-400 dark:border-slate-600 pl-3.5 space-y-1">
-              <span className="text-slate-400 text-xs uppercase font-bold block">2. Delivery</span>
-              <span className="font-bold text-slate-900 dark:text-white block text-sm">{bookingSuccess.recipientLandmark.name}</span>
-              <span className="text-slate-500 dark:text-slate-400 text-xs block">{bookingSuccess.recipientDetail}</span>
-              <span className="text-slate-500 dark:text-slate-400 text-xs block pt-1">Recipient: {bookingSuccess.recipientName} ({bookingSuccess.recipientPhone})</span>
-            </div>
-          </div>
-
-          {/* Single Delivery Fee Card */}
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs sm:text-sm mb-6">
-            <div>
-              <span className="text-slate-800 dark:text-slate-200 font-bold block">
-                Delivery Fee: ₦{bookingSuccess.deliveryFee.toLocaleString()}
-              </span>
-              <span className="text-slate-500 text-xs">
-                {bookingSuccess.paymentMode === 'pay_on_delivery' 
-                  ? 'To be paid in cash by recipient upon parcel arrival.' 
-                  : 'Prepaid by sender.'}
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                {bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery' : 'Prepaid'}
-              </span>
+            <div className="flex justify-between items-center pt-1">
+              <div>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                  {bookingSuccess.itemDescription} ({bookingSuccess.itemCategory})
+                </span>
+                <span className="text-xs text-slate-500">
+                  {bookingSuccess.paymentMode === 'pay_on_delivery' ? '💵 Courier collects fee from recipient on arrival' : '✅ Fee prepaid by sender'}
+                </span>
+                {bookingSuccess.isFragile && (
+                  <span className="inline-block mt-1 text-[11px] text-amber-700 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/40">
+                    ⚠️ Fragile / Upright Box Handling Required
+                  </span>
+                )}
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Delivery Fee</span>
+                <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                  ₦{bookingSuccess.deliveryFee.toLocaleString()}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="mt-6 flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => {
-                const text = `Sannu ${bookingSuccess.recipientName}, your parcel from ${bookingSuccess.senderName} is dispatched via Fimrash Logistics Kano!\n\n📦 Waybill: ${bookingSuccess.trackingCode}\n🔑 Delivery Confirmation OTP: ${bookingSuccess.otpCode}\n💵 Delivery Fee: ₦${bookingSuccess.deliveryFee.toLocaleString()} (${bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Pay on arrival' : 'Prepaid'})\n\n⚠️ IMPORTANT: Give this OTP code to the rider only after receiving your parcel.`;
-                window.open(`https://wa.me/234${bookingSuccess.recipientPhone.replace(/^0/, '')}?text=${encodeURIComponent(text)}`, '_blank');
+                const text = `*FIMRASH DISPATCH DISPATCH PASS*\nWaybill: ${bookingSuccess.trackingCode}\nFrom: ${bookingSuccess.senderLandmark.name} (${bookingSuccess.senderName})\nTo: ${bookingSuccess.recipientLandmark.name} (${bookingSuccess.recipientName})\nFee: ₦${bookingSuccess.deliveryFee.toLocaleString()} (${bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery' : 'Prepaid'})\nRecipient OTP: ${bookingSuccess.otpCode}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
               }}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl text-center text-sm transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl text-center text-xs sm:text-sm transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Share Waybill & OTP via WhatsApp</span>
+              <span>Share Pass on WhatsApp</span>
             </button>
 
             <button
               onClick={() => setBookingSuccess(null)}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3.5 px-5 rounded-xl text-center text-sm transition cursor-pointer"
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3.5 px-6 rounded-xl text-center text-xs sm:text-sm transition cursor-pointer border border-slate-200 dark:border-slate-700"
             >
-              Book Another Parcel
+              Book Another Dispatch
             </button>
           </div>
         </div>
@@ -210,104 +237,127 @@ export default function BookingForm({ onDeliveryCreated }) {
     );
   }
 
-  // MAIN DISPATCH REQUEST FORM (Spacious, Average Standard Sizing)
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Title & Quick Presets */}
-      <div>
-        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-2">
-          <Zap className="w-3.5 h-3.5" />
-          <span>Kano Metropolitan Intra-State Courier Service</span>
+    <div className="max-w-3xl mx-auto py-2 sm:py-4">
+      {/* Page Header */}
+      <div className="text-center mb-6 sm:mb-8 space-y-2">
+        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-semibold border border-emerald-200 dark:border-emerald-800/40">
+          <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>Kano Intra-State Express Dispatch: Homes, Bakers, Boutiques &amp; Markets</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-          Request Parcel Pickup & Delivery
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          Request Parcel Pickup &amp; Delivery
         </h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-          Fast landmark-guided courier dispatch for parcels, fabrics, documents, and goods across Kano metropolis.
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+          Fast landmark-guided courier dispatch for home bakeries, catering, abayas, documents, fabrics, and goods across Kano metropolis.
         </p>
 
-        {/* Quick Corridor Selection Chips */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1 mt-4 no-scrollbar">
-          <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Quick Corridors:</span>
-          {POPULAR_PRESETS.map((p, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                setFormData({
-                  ...formData,
-                  senderLandmark: p.from,
-                  recipientLandmark: p.to
-                });
-              }}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 shrink-0 transition shadow-2xs"
-            >
-              {p.label}
-            </button>
-          ))}
+        {/* Quick Corridor Presets Bar */}
+        <div className="pt-3">
+          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">
+              Popular Runs:
+            </span>
+            {POPULAR_PRESETS.map((preset, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleApplyPreset(preset)}
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center space-x-1"
+              >
+                <span>{preset.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Map Corridor Accordion / Toggle */}
-      <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900/50">
+      {/* Corridor Radar Accordion */}
+      <div className="mb-6">
         <button
           type="button"
           onClick={() => setShowMap(!showMap)}
-          className="w-full px-5 py-3.5 flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+          className="w-full glass-card rounded-xl p-3 flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
         >
           <div className="flex items-center space-x-2">
             <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Kano Corridor Radar: {selectedSenderLandmark.name.split(' ')[0]} → {selectedRecipientLandmark.name.split(' ')[0]}</span>
           </div>
-          <div className="flex items-center space-x-1.5 text-xs text-slate-500">
-            <span>{showMap ? 'Hide Radar' : 'View Corridor Map'}</span>
+          <div className="flex items-center space-x-1 text-slate-400 text-xs">
+            <span>{showMap ? 'Hide Radar Map' : 'View Corridor Map'}</span>
             {showMap ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </button>
 
         {showMap && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+          <div className="mt-3 transition-all">
             <KanoRouteMap
               pickupLandmark={selectedSenderLandmark}
               dropoffLandmark={selectedRecipientLandmark}
-              onSelectLandmark={(landmarkId) => {
-                setFormData(prev => ({ ...prev, recipientLandmark: landmarkId }));
-              }}
             />
           </div>
         )}
       </div>
 
-      {/* Primary Dispatch Request Form */}
-      <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
-        {/* SECTION 1: PICKUP LOCATION */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm sm:text-base">
-              <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>1. Pickup Details (Sender)</span>
+      {/* Main Spacious Booking Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* SECTION 1: PICKUP ORIGIN (Sender) */}
+        <div className="glass-card rounded-2xl p-5 sm:p-7 space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center space-x-2">
+              <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                1. Pickup Details (Sender / Origin)
+              </h2>
             </div>
-            <span className="text-xs text-slate-400 font-medium">Step 1 of 3</span>
+
+            {/* Origin Type Switcher: Home vs Market vs Office */}
+            <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, senderType: 'home' })}
+                className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg transition ${
+                  formData.senderType === 'home'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                }`}
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>Home / Residence</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, senderType: 'market' })}
+                className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg transition ${
+                  formData.senderType === 'market'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                }`}
+              >
+                <Store className="w-3.5 h-3.5" />
+                <span>Shop / Market</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Sender / Business Name *
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                {formData.senderType === 'home' ? 'Sender / Home Baker / Name *' : 'Merchant / Business / Stall Name *'}
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Al-Ihsan Textiles"
+                placeholder={formData.senderType === 'home' ? 'e.g. Fatima Bakes / Aisha Gyadi' : 'e.g. Al-Ihsan Textiles'}
                 value={formData.senderName}
                 onChange={(e) => setFormData({ ...formData, senderName: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm transition"
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Sender Phone Number *
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Sender Phone Number (WhatsApp / Call) *
               </label>
               <input
                 type="tel"
@@ -315,73 +365,105 @@ export default function BookingForm({ onDeliveryCreated }) {
                 placeholder="08031234567"
                 value={formData.senderPhone}
                 onChange={(e) => setFormData({ ...formData, senderPhone: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm transition"
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base font-mono transition"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Pickup Market / Landmark *
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Pickup Area / Corridor Landmark *
               </label>
               <select
                 value={formData.senderLandmark}
                 onChange={(e) => setFormData({ ...formData, senderLandmark: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm transition"
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold transition"
               >
-                {KANO_LANDMARKS.map((landmark) => (
-                  <option key={landmark.id} value={landmark.id}>
-                    {landmark.name} ({landmark.hausaName})
-                  </option>
-                ))}
+                <optgroup label="Residential & Home Enterprise Hubs">
+                  {KANO_LANDMARKS.filter(l => l.type === 'residential').map((l) => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Commercial Markets & Tech Plazas">
+                  {KANO_LANDMARKS.filter(l => l.type !== 'residential').map((l) => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </optgroup>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Stall / Line / Exact Gate Detail *
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                {formData.senderType === 'home' ? 'House No. / Street / Compound Landmark *' : 'Stall / Line / Shop Number *'}
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Block B, Line 3, Shop 14 (Near Access Bank)"
+                placeholder={formData.senderType === 'home' ? 'e.g. House No. 14, Behind Veterinary Clinic, Court Rd' : 'e.g. Block B, Line 3, Shop 14 (Near Access Bank)'}
                 value={formData.senderDetail}
                 onChange={(e) => setFormData({ ...formData, senderDetail: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm transition"
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
               />
             </div>
           </div>
         </div>
 
-        {/* SECTION 2: DELIVERY DESTINATION */}
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm sm:text-base">
-              <Navigation className="w-4 h-4 text-slate-500" />
-              <span>2. Delivery Destination (Recipient)</span>
+        {/* SECTION 2: DELIVERY DESTINATION (Recipient) */}
+        <div className="glass-card rounded-2xl p-5 sm:p-7 space-y-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center space-x-2">
+              <Navigation className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                2. Delivery Destination (Recipient)
+              </h2>
             </div>
-            <span className="text-xs text-slate-400 font-medium">Step 2 of 3</span>
+
+            {/* Destination Type Switcher */}
+            <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, recipientType: 'home' })}
+                className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg transition ${
+                  formData.recipientType === 'home'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                }`}
+              >
+                <Home className="w-3.5 h-3.5" />
+                <span>Home Address</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, recipientType: 'market' })}
+                className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg transition ${
+                  formData.recipientType === 'market'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                }`}
+              >
+                <Store className="w-3.5 h-3.5" />
+                <span>Shop / Office</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
                 Recipient / Customer Name *
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Hajiya Maryam S. Danbatta"
+                placeholder="e.g. Amina Sani / Hajiya Maryam"
                 value={formData.recipientName}
                 onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm transition"
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Recipient Phone Number *
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Recipient Phone Number (For Handshake OTP) *
               </label>
               <input
                 type="tel"
@@ -389,100 +471,152 @@ export default function BookingForm({ onDeliveryCreated }) {
                 placeholder="08156661246"
                 value={formData.recipientPhone}
                 onChange={(e) => setFormData({ ...formData, recipientPhone: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm transition"
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base font-mono transition"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
                 Destination Area / Landmark *
               </label>
               <select
                 value={formData.recipientLandmark}
                 onChange={(e) => setFormData({ ...formData, recipientLandmark: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm transition"
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold transition"
               >
-                {KANO_LANDMARKS.map((landmark) => (
-                  <option key={landmark.id} value={landmark.id}>
-                    {landmark.name} ({landmark.hausaName})
-                  </option>
-                ))}
+                <optgroup label="Residential Areas, GRAs & Campuses">
+                  {KANO_LANDMARKS.filter(l => l.type === 'residential' || l.type === 'campus').map((l) => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Markets & Commercial Plazas">
+                  {KANO_LANDMARKS.filter(l => l.type !== 'residential' && l.type !== 'campus').map((l) => (
+                    <option key={l.id} value={l.id}>{l.name}</option>
+                  ))}
+                </optgroup>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                House / Gate / Landmark Address *
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                House Address / Landmark Near Destination *
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. House No. 12, Coronation Hall Road"
+                placeholder={formData.recipientType === 'home' ? 'e.g. House No. 8, Beside Jallaba Mosque, Naibawa' : 'e.g. Shop 4, Zoo Road Complex'}
                 value={formData.recipientDetail}
                 onChange={(e) => setFormData({ ...formData, recipientDetail: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm transition"
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
               />
             </div>
           </div>
         </div>
 
-        {/* SECTION 3: PARCEL DETAILS & PAYMENT OPTION */}
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm sm:text-base">
-              <Package className="w-4 h-4 text-slate-500" />
-              <span>3. Parcel & Delivery Payment</span>
-            </div>
-            <span className="text-xs text-slate-400 font-medium">Step 3 of 3</span>
+        {/* SECTION 3: PARCEL DETAILS, FRAGILE CARE & PAYMENT */}
+        <div className="glass-card rounded-2xl p-5 sm:p-7 space-y-5 shadow-sm">
+          <div className="flex items-center space-x-2 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              3. Parcel Type &amp; Special Handling
+            </h2>
           </div>
 
-          {/* Parcel Category Chips */}
+          {/* Parcel Category Grid */}
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Select Package Type:
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2.5">
+              Select What You Are Sending
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {CATEGORIES.map((cat) => {
-                const isSelected = formData.itemCategory === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, itemCategory: cat.id })}
-                    className={`p-3 rounded-xl text-left border transition-all flex items-center space-x-2.5 cursor-pointer ${
-                      isSelected
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-600 dark:text-emerald-300 font-bold shadow-2xs'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:border-slate-300'
-                    }`}
-                  >
-                    <span className="text-xl shrink-0">{cat.icon}</span>
-                    <span className="text-xs sm:text-sm font-medium leading-tight">{cat.label}</span>
-                  </button>
-                );
-              })}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {CATEGORIES.map((cat) => (
+                <button
+                  type="button"
+                  key={cat.id}
+                  onClick={() => {
+                    const isCakeOrFood = cat.id.includes('Cakes') || cat.id.includes('Food');
+                    setFormData({ 
+                      ...formData, 
+                      itemCategory: cat.id,
+                      isFragile: isCakeOrFood ? true : formData.isFragile
+                    });
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    formData.itemCategory === cat.id
+                      ? 'bg-emerald-50 border-emerald-600 dark:bg-emerald-950/40 dark:border-emerald-500 shadow-sm'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl mb-1">{cat.icon}</span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                      {cat.badge}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block mt-1">
+                    {cat.label}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Package Description Note */}
-          <div>
-            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Package Description / Special Handling Notes (Optional)
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. 3 bundles of Swiss lace in black polythene bag"
-              value={formData.itemDescription}
-              onChange={(e) => setFormData({ ...formData, itemDescription: e.target.value })}
-              className="w-full rounded-xl px-4 py-3 text-sm transition"
-            />
+          {/* Description & Handling Instructions */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Brief Parcel Description
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 10-inch Birthday Cake / 3 Abaya Dresses / Small Chops Box"
+                value={formData.itemDescription}
+                onChange={(e) => setFormData({ ...formData, itemDescription: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Special Delivery / Handling Notes
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Please keep upright in box; call upon arrival at gate"
+                value={formData.deliveryNote}
+                onChange={(e) => setFormData({ ...formData, deliveryNote: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
+              />
+            </div>
           </div>
 
-          {/* Delivery Fee Payment Option: Who Pays? */}
-          <div className="space-y-2 pt-2">
-            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-              Who Pays the Delivery Fee?
+          {/* Cake & Food Upright Handling Guarantee */}
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <span className="text-lg">🎂</span>
+              <div>
+                <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                  Fragile / Upright Box Dispatch Care
+                </span>
+                <span className="text-[11px] text-slate-500 block">
+                  Courier takes extra precautions to keep cakes, pastries, and food boxes level and secure.
+                </span>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isFragile}
+                onChange={(e) => setFormData({ ...formData, isFragile: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
+          {/* Payment Method Selection (No vendor item fees) */}
+          <div className="pt-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
+              How Will the Delivery Fee Be Settled?
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label 
@@ -502,10 +636,10 @@ export default function BookingForm({ onDeliveryCreated }) {
                 />
                 <div>
                   <span className="block text-sm font-bold text-slate-900 dark:text-white">
-                    Recipient Pays on Arrival
+                    Recipient Pays on Arrival (Cash)
                   </span>
                   <span className="text-xs text-slate-500 block mt-0.5">
-                    Courier collects ₦{deliveryFee.toLocaleString()} from recipient when handing over parcel.
+                    Courier collects ₦{deliveryFee.toLocaleString()} delivery fee from recipient upon handover.
                   </span>
                 </div>
               </label>
@@ -530,7 +664,7 @@ export default function BookingForm({ onDeliveryCreated }) {
                     Sender Prepaids Fee
                   </span>
                   <span className="text-xs text-slate-500 block mt-0.5">
-                    Sender pays the ₦{deliveryFee.toLocaleString()} fee upfront; zero cash to collect from customer.
+                    Sender pays the ₦{deliveryFee.toLocaleString()} fee upfront; zero cash collected from recipient.
                   </span>
                 </div>
               </label>
@@ -546,7 +680,7 @@ export default function BookingForm({ onDeliveryCreated }) {
             </span>
             <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white font-mono flex items-baseline space-x-2 mt-0.5">
               <span>₦{deliveryFee.toLocaleString()}</span>
-              <span className="text-xs font-sans font-semibold text-emerald-600 dark:text-emerald-400">Fixed Rate</span>
+              <span className="text-xs font-sans font-semibold text-emerald-600 dark:text-emerald-400">Fixed Corridor Rate</span>
             </div>
             <span className="text-xs text-slate-500 block mt-0.5">
               {selectedSenderLandmark.name.split(' ')[0]} → {selectedRecipientLandmark.name.split(' ')[0]}
@@ -558,7 +692,7 @@ export default function BookingForm({ onDeliveryCreated }) {
               Payment Method
             </span>
             <span className="text-sm font-bold text-slate-900 dark:text-white block mt-1">
-              {formData.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery (Cash)' : 'Prepaid by Sender'}
+              {formData.paymentMode === 'pay_on_delivery' ? '💵 Pay on Delivery' : '✅ Prepaid by Sender'}
             </span>
           </div>
         </div>

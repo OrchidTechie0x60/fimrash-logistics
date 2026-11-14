@@ -33,21 +33,24 @@ CREATE TABLE IF NOT EXISTS riders (
 CREATE TABLE IF NOT EXISTS deliveries (
     id VARCHAR(32) PRIMARY KEY,
     tracking_code VARCHAR(32) UNIQUE NOT NULL, -- e.g. FMR-KN-1042
+    sender_type VARCHAR(32) DEFAULT 'home', -- home, market, office
     sender_name VARCHAR(128) NOT NULL,
     sender_phone VARCHAR(32) NOT NULL,
     sender_landmark_id VARCHAR(64) NOT NULL,
-    sender_landmark_detail VARCHAR(255), -- e.g. Shop 42, Block B, Behind Access Bank
+    sender_landmark_detail VARCHAR(255), -- e.g. House 14, Behind Veterinary, Court Road / Block B, Line 3
     
+    recipient_type VARCHAR(32) DEFAULT 'home', -- home, market, office
     recipient_name VARCHAR(128) NOT NULL,
     recipient_phone VARCHAR(32) NOT NULL,
     recipient_landmark_id VARCHAR(64) NOT NULL,
-    recipient_landmark_detail VARCHAR(255), -- e.g. House 14, Near Coronation Hall
+    recipient_landmark_detail VARCHAR(255), -- e.g. Near Jallaba Mosque, Naibawa / House 12, Coronation Hall Rd
     
-    item_category VARCHAR(64) NOT NULL, -- fabrics, electronics, documents, cosmetics, food, other
+    item_category VARCHAR(64) NOT NULL, -- cakes, catering_food, fabrics, perfumes, electronics, documents, personal
     item_description VARCHAR(255),
-    item_value DECIMAL(10, 2) DEFAULT 0.00,
+    is_fragile BOOLEAN DEFAULT 0, -- 1 for cakes, pastries, upright handling
+    special_instructions VARCHAR(255),
     
-    payment_mode VARCHAR(32) DEFAULT 'prepaid', -- prepaid, cod (cash on delivery)
+    payment_mode VARCHAR(32) DEFAULT 'pay_on_delivery', -- pay_on_delivery, prepaid
     cod_amount DECIMAL(10, 2) DEFAULT 0.00,
     delivery_fee DECIMAL(10, 2) NOT NULL,
     
