@@ -16,8 +16,8 @@ export default function Navbar({
   const tabs = [
     { id: 'booking', label: 'Book Dispatch', icon: Package, badge: null, restricted: false },
     { id: 'tracking', label: 'Live Tracking', icon: Search, badge: null, restricted: false },
-    { id: 'rider', label: 'Rider Console', icon: Truck, badge: activeDeliveriesCount > 0 ? activeDeliveriesCount : null, restricted: true },
-    { id: 'ledger', label: 'COD Settlement', icon: Banknote, badge: 'Vault', restricted: true }
+    { id: 'rider', label: 'Courier Console', icon: Truck, badge: activeDeliveriesCount > 0 ? activeDeliveriesCount : null, restricted: true },
+    { id: 'ledger', label: 'Delivery Ledger', icon: Banknote, badge: 'Vault', restricted: true }
   ];
 
   return (
@@ -44,7 +44,7 @@ export default function Navbar({
                 </span>
               </div>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium hidden md:block">
-                Courier Dispatch & Anti-Theft COD Platform
+                Intra-State Goods &amp; Parcel Courier Dispatch
               </p>
             </div>
           </div>

@@ -3,7 +3,8 @@ import { KANO_LANDMARKS, calculateDeliveryFare } from '../data/kanoLandmarks';
 import KanoRouteMap from './KanoRouteMap';
 import { 
   MapPin, Navigation, Package, DollarSign, ShieldCheck, ArrowRight, 
-  CheckCircle2, Copy, Sparkles, Phone, MessageSquare, Clock, Zap, Store
+  CheckCircle2, Copy, Sparkles, Phone, MessageSquare, Clock, Zap, Store,
+  Compass, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 export default function BookingForm({ onDeliveryCreated }) {
@@ -16,12 +17,12 @@ export default function BookingForm({ onDeliveryCreated }) {
     recipientPhone: '',
     recipientLandmark: 'nassarawa-gra',
     recipientDetail: '',
-    itemCategory: 'Fabrics & Fashion',
+    itemCategory: 'Fabrics & Textiles',
     itemDescription: '',
-    isCod: true,
-    itemValue: '18500',
+    paymentMode: 'pay_on_delivery', // 'pay_on_delivery' or 'prepaid'
   });
 
+  const [showMap, setShowMap] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -29,25 +30,23 @@ export default function BookingForm({ onDeliveryCreated }) {
   const selectedRecipientLandmark = KANO_LANDMARKS.find(l => l.id === formData.recipientLandmark) || KANO_LANDMARKS[6];
 
   const deliveryFee = calculateDeliveryFare(formData.senderLandmark, formData.recipientLandmark);
-  const itemValueNum = parseFloat(formData.itemValue) || 0;
-  const netVendorPayout = formData.isCod ? Math.max(0, itemValueNum - deliveryFee) : 0;
 
-  // Categories with calm styling
+  // Standard Categories for Kano Goods & Parcels
   const CATEGORIES = [
-    { id: 'Fabrics & Fashion', label: 'Shadda & Fabrics', icon: '🧵' },
-    { id: 'Phones & Gadgets', label: 'Gadgets & Tech', icon: '📱' },
-    { id: 'Cosmetics & Perfumes', label: 'Perfumes & Beauty', icon: '✨' },
-    { id: 'Documents', label: 'Contracts / Bills', icon: '📄' },
-    { id: 'Footwear & Leather', label: 'Shoes & Bags', icon: '👞' },
-    { id: 'Provisions & Food', label: 'FMCG / Food', icon: '📦' },
+    { id: 'Fabrics & Textiles', label: 'Fabrics / Shadda / Lace', icon: '🧵' },
+    { id: 'Phones & Gadgets', label: 'Electronics & Phones', icon: '📱' },
+    { id: 'Cosmetics & Beauty', label: 'Cosmetics & Perfumes', icon: '✨' },
+    { id: 'Documents & Letters', label: 'Documents & Papers', icon: '📄' },
+    { id: 'Footwear & Bags', label: 'Shoes, Bags & Leather', icon: '👞' },
+    { id: 'Food & Provisions', label: 'Groceries & Provisions', icon: '📦' },
   ];
 
-  // Quick Kano market presets
+  // Popular Kano Corridors for 1-click select
   const POPULAR_PRESETS = [
-    { label: 'Kwari → Nassarawa', from: 'kwari-textiles', to: 'nassarawa-gra' },
-    { label: 'Farm Centre → BUK', from: 'farm-centre', to: 'buk-new-campus' },
-    { label: 'Singer → Zoo Road', from: 'singer-market', to: 'zoo-road' },
-    { label: 'Kwari → Hotoro', from: 'kwari-textiles', to: 'hotoro-gra' },
+    { label: 'Kwari → Nassarawa GRA', from: 'kwari-textiles', to: 'nassarawa-gra' },
+    { label: 'Farm Centre → BUK Campus', from: 'farm-centre', to: 'buk-new-campus' },
+    { label: 'Singer Market → Zoo Road', from: 'singer-market', to: 'zoo-road' },
+    { label: 'Kwari → Hotoro GRA', from: 'kwari-textiles', to: 'hotoro-gra' },
   ];
 
   const handleSubmit = (e) => {
@@ -71,11 +70,10 @@ export default function BookingForm({ onDeliveryCreated }) {
       recipientLandmark: selectedRecipientLandmark,
       recipientDetail: formData.recipientDetail || 'Coronation Hall Road',
       itemCategory: formData.itemCategory,
-      itemDescription: formData.itemDescription || '3 bundles Super-Magnum Shadda lace',
-      isCod: formData.isCod,
-      itemValue: itemValueNum,
+      itemDescription: formData.itemDescription || 'Standard Parcel Package',
       deliveryFee,
-      netVendorPayout,
+      paymentMode: formData.paymentMode,
+      feeCollected: false,
       assignedRider: {
         name: 'Musa Garba (Rider #04)',
         phone: '08156661246',
@@ -94,112 +92,117 @@ export default function BookingForm({ onDeliveryCreated }) {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  // SUCCESS PASS MODAL (Calm, Bank-Grade Consignment Pass)
+  // SUCCESS WAYBILL PASS
   if (bookingSuccess) {
     return (
-      <div className="max-w-2xl mx-auto py-4 sm:py-8">
-        <div className="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden">
-          {/* Ticket Header */}
+      <div className="max-w-2xl mx-auto py-6 sm:py-10">
+        <div className="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-sm">
+          {/* Header */}
           <div className="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
+                <span className="text-xs font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
                   Dispatch Confirmed
                 </span>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Waybill Active</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Waybill Logged</h2>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Tracking Code</span>
-              <div className="text-lg font-mono font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+              <span className="text-xs uppercase font-semibold text-slate-400 block">Waybill Number</span>
+              <div className="text-xl font-mono font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                 <span>{bookingSuccess.trackingCode}</span>
                 <button
                   onClick={() => copyToClipboard(bookingSuccess.trackingCode)}
                   className="text-slate-400 hover:text-emerald-600 transition"
                   title="Copy"
                 >
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy className="w-4 h-4" />
                 </button>
               </div>
-              {copiedCode && <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block">Copied!</span>}
+              {copiedCode && <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block">Copied!</span>}
             </div>
           </div>
 
-          {/* Calm Recipient Handshake Card */}
-          <div className="my-5 p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center space-x-1.5 text-amber-800 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
+          {/* 4-Digit Recipient Handshake OTP */}
+          <div className="my-6 p-5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2 text-amber-800 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4" />
                 <span>Recipient Delivery OTP Handshake</span>
               </div>
-              <span className="text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-semibold px-2 py-0.5 rounded">
-                Recipient Private Pass
+              <span className="text-[11px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-0.5 rounded">
+                Recipient Private Code
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-slate-600 dark:text-slate-300 max-w-xs">
-                Provide this 4-digit code to the courier <span className="font-semibold underline">only after</span> inspecting your parcel.
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-sm">
+                Provide this 4-digit code to the courier <span className="font-semibold underline">only after receiving your parcel</span> to confirm successful delivery.
               </p>
-              <div className="text-2xl sm:text-3xl font-mono font-bold text-amber-900 dark:text-amber-400 tracking-widest bg-white dark:bg-slate-900 px-3.5 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700/50">
+              <div className="text-3xl font-mono font-bold text-amber-900 dark:text-amber-400 tracking-widest bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-amber-300 dark:border-amber-700/50 shadow-sm text-center">
                 {bookingSuccess.otpCode}
               </div>
             </div>
           </div>
 
-          {/* Route & Courier Detail */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-5 bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div className="border-l-2 border-emerald-600 dark:border-emerald-500 pl-3">
-              <span className="text-slate-400 text-[10px] uppercase font-bold block mb-0.5">Pickup Merchant</span>
-              <span className="font-bold text-slate-900 dark:text-white block">{bookingSuccess.senderLandmark.name}</span>
-              <span className="text-slate-500 dark:text-slate-400 text-[11px] block">{bookingSuccess.senderDetail}</span>
-              <span className="text-slate-500 dark:text-slate-400 text-[11px] mt-1 block">Merchant: {bookingSuccess.senderName}</span>
+          {/* Delivery & Routing Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm mb-6 bg-slate-50 dark:bg-slate-900/60 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="border-l-2 border-emerald-600 dark:border-emerald-500 pl-3.5 space-y-1">
+              <span className="text-slate-400 text-xs uppercase font-bold block">1. Pickup</span>
+              <span className="font-bold text-slate-900 dark:text-white block text-sm">{bookingSuccess.senderLandmark.name}</span>
+              <span className="text-slate-500 dark:text-slate-400 text-xs block">{bookingSuccess.senderDetail}</span>
+              <span className="text-slate-500 dark:text-slate-400 text-xs block pt-1">Sender: {bookingSuccess.senderName} ({bookingSuccess.senderPhone})</span>
             </div>
 
-            <div className="border-l-2 border-slate-400 dark:border-slate-600 pl-3">
-              <span className="text-slate-400 text-[10px] uppercase font-bold block mb-0.5">Destination</span>
-              <span className="font-bold text-slate-900 dark:text-white block">{bookingSuccess.recipientLandmark.name}</span>
-              <span className="text-slate-500 dark:text-slate-400 text-[11px] block">{bookingSuccess.recipientDetail}</span>
-              <span className="text-slate-500 dark:text-slate-400 text-[11px] mt-1 block">Recipient: {bookingSuccess.recipientName}</span>
+            <div className="border-l-2 border-slate-400 dark:border-slate-600 pl-3.5 space-y-1">
+              <span className="text-slate-400 text-xs uppercase font-bold block">2. Delivery</span>
+              <span className="font-bold text-slate-900 dark:text-white block text-sm">{bookingSuccess.recipientLandmark.name}</span>
+              <span className="text-slate-500 dark:text-slate-400 text-xs block">{bookingSuccess.recipientDetail}</span>
+              <span className="text-slate-500 dark:text-slate-400 text-xs block pt-1">Recipient: {bookingSuccess.recipientName} ({bookingSuccess.recipientPhone})</span>
             </div>
           </div>
 
-          {/* COD Settlement Summary */}
-          {bookingSuccess.isCod && (
-            <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs mb-5">
-              <div>
-                <span className="text-slate-800 dark:text-slate-200 font-bold block">Cash on Delivery (COD)</span>
-                <span className="text-slate-500 text-[11px]">Courier collects physical cash upon handover.</span>
-              </div>
-              <div className="text-right">
-                <span className="text-lg font-bold text-slate-900 dark:text-white font-mono">₦{bookingSuccess.itemValue.toLocaleString()}</span>
-                <span className="text-[10px] text-slate-400 block">Fee: ₦{bookingSuccess.deliveryFee.toLocaleString()}</span>
-              </div>
+          {/* Single Delivery Fee Card */}
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs sm:text-sm mb-6">
+            <div>
+              <span className="text-slate-800 dark:text-slate-200 font-bold block">
+                Delivery Fee: ₦{bookingSuccess.deliveryFee.toLocaleString()}
+              </span>
+              <span className="text-slate-500 text-xs">
+                {bookingSuccess.paymentMode === 'pay_on_delivery' 
+                  ? 'To be paid in cash by recipient upon parcel arrival.' 
+                  : 'Prepaid by sender.'}
+              </span>
             </div>
-          )}
+            <div className="text-right">
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                {bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery' : 'Prepaid'}
+              </span>
+            </div>
+          </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2.5">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => {
-                const text = `Sannu ${bookingSuccess.recipientName}, your order from ${bookingSuccess.senderName} is dispatched via Fimrash Logistics Kano!\n\n📦 Waybill: ${bookingSuccess.trackingCode}\n🔑 Secret Handshake OTP: ${bookingSuccess.otpCode}\n💵 COD to Pay: ₦${bookingSuccess.itemValue.toLocaleString()}\n\n⚠️ IMPORTANT: Only give this OTP to the courier after you inspect your parcel!`;
+                const text = `Sannu ${bookingSuccess.recipientName}, your parcel from ${bookingSuccess.senderName} is dispatched via Fimrash Logistics Kano!\n\n📦 Waybill: ${bookingSuccess.trackingCode}\n🔑 Delivery Confirmation OTP: ${bookingSuccess.otpCode}\n💵 Delivery Fee: ₦${bookingSuccess.deliveryFee.toLocaleString()} (${bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Pay on arrival' : 'Prepaid'})\n\n⚠️ IMPORTANT: Give this OTP code to the rider only after receiving your parcel.`;
                 window.open(`https://wa.me/234${bookingSuccess.recipientPhone.replace(/^0/, '')}?text=${encodeURIComponent(text)}`, '_blank');
               }}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-center text-xs sm:text-sm transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl text-center text-sm transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Send Customer OTP via WhatsApp</span>
+              <span>Share Waybill & OTP via WhatsApp</span>
             </button>
 
             <button
               onClick={() => setBookingSuccess(null)}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3 px-4 rounded-xl text-center text-xs sm:text-sm transition cursor-pointer"
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3.5 px-5 rounded-xl text-center text-sm transition cursor-pointer"
             >
-              Book Another
+              Book Another Parcel
             </button>
           </div>
         </div>
@@ -207,27 +210,25 @@ export default function BookingForm({ onDeliveryCreated }) {
     );
   }
 
-  // MAIN BOOKING INTERFACE
+  // MAIN DISPATCH REQUEST FORM (Spacious, Average Standard Sizing)
   return (
-    <div className="space-y-5">
-      {/* Calm Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
-        <div>
-          <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-1.5">
-            <Zap className="w-3 h-3" />
-            <span>Kano Intra-State Express Dispatch Network</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Dispatch a Courier in Kano
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl">
-            Commercial landmark navigation, 4-digit recipient anti-theft handshake, and automated Cash-on-Delivery (COD) reconciliation.
-          </p>
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Title & Quick Presets */}
+      <div>
+        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-2">
+          <Zap className="w-3.5 h-3.5" />
+          <span>Kano Metropolitan Intra-State Courier Service</span>
         </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+          Request Parcel Pickup & Delivery
+        </h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+          Fast landmark-guided courier dispatch for parcels, fabrics, documents, and goods across Kano metropolis.
+        </p>
 
-        {/* Quick Corridor Presets (Clean, calm chips) */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 no-scrollbar">
-          <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">Corridors:</span>
+        {/* Quick Corridor Selection Chips */}
+        <div className="flex items-center space-x-2 overflow-x-auto pb-1 mt-4 no-scrollbar">
+          <span className="text-xs font-bold text-slate-400 uppercase shrink-0">Quick Corridors:</span>
           {POPULAR_PRESETS.map((p, idx) => (
             <button
               key={idx}
@@ -239,7 +240,7 @@ export default function BookingForm({ onDeliveryCreated }) {
                   recipientLandmark: p.to
                 });
               }}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 shrink-0 transition"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 shrink-0 transition shadow-2xs"
             >
               {p.label}
             </button>
@@ -247,274 +248,330 @@ export default function BookingForm({ onDeliveryCreated }) {
         </div>
       </div>
 
-      {/* Main Grid: Left = Map Radar, Right = Booking Form */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Column: Spatial Route Visualizer */}
-        <div className="lg:col-span-5 space-y-4">
-          <KanoRouteMap
-            pickupLandmark={selectedSenderLandmark}
-            dropoffLandmark={selectedRecipientLandmark}
-            onSelectLandmark={(landmarkId) => {
-              setFormData(prev => ({ ...prev, recipientLandmark: landmarkId }));
-            }}
-          />
+      {/* Map Corridor Accordion / Toggle */}
+      <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900/50">
+        <button
+          type="button"
+          onClick={() => setShowMap(!showMap)}
+          className="w-full px-5 py-3.5 flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
+        >
+          <div className="flex items-center space-x-2">
+            <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Kano Corridor Radar: {selectedSenderLandmark.name.split(' ')[0]} → {selectedRecipientLandmark.name.split(' ')[0]}</span>
+          </div>
+          <div className="flex items-center space-x-1.5 text-xs text-slate-500">
+            <span>{showMap ? 'Hide Radar' : 'View Corridor Map'}</span>
+            {showMap ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
+        </button>
 
-          {/* Market Insight Capsule */}
-          <div className="glass-card rounded-xl p-3.5 text-xs space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
-                <Store className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Selected Pickup Hub</span>
-              </span>
-              <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded font-medium">
-                {selectedSenderLandmark.category}
-              </span>
+        {showMap && (
+          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+            <KanoRouteMap
+              pickupLandmark={selectedSenderLandmark}
+              dropoffLandmark={selectedRecipientLandmark}
+              onSelectLandmark={(landmarkId) => {
+                setFormData(prev => ({ ...prev, recipientLandmark: landmarkId }));
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Primary Dispatch Request Form */}
+      <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+        {/* SECTION 1: PICKUP LOCATION */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm sm:text-base">
+              <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>1. Pickup Details (Sender)</span>
             </div>
-            <p className="text-slate-700 dark:text-slate-300 font-semibold">{selectedSenderLandmark.name} ({selectedSenderLandmark.hausaName})</p>
-            <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-800">
-              <span className="font-medium">Nav Anchors:</span> {selectedSenderLandmark.popularAnchors.slice(0, 2).join(' • ')}
+            <span className="text-xs text-slate-400 font-medium">Step 1 of 3</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Sender / Business Name *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Al-Ihsan Textiles"
+                value={formData.senderName}
+                onChange={(e) => setFormData({ ...formData, senderName: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 text-sm transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Sender Phone Number *
+              </label>
+              <input
+                type="tel"
+                required
+                placeholder="08031234567"
+                value={formData.senderPhone}
+                onChange={(e) => setFormData({ ...formData, senderPhone: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 text-sm transition"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Pickup Market / Landmark *
+              </label>
+              <select
+                value={formData.senderLandmark}
+                onChange={(e) => setFormData({ ...formData, senderLandmark: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 text-sm transition"
+              >
+                {KANO_LANDMARKS.map((landmark) => (
+                  <option key={landmark.id} value={landmark.id}>
+                    {landmark.name} ({landmark.hausaName})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Stall / Line / Exact Gate Detail *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Block B, Line 3, Shop 14 (Near Access Bank)"
+                value={formData.senderDetail}
+                onChange={(e) => setFormData({ ...formData, senderDetail: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 text-sm transition"
+              />
             </div>
           </div>
         </div>
 
-        {/* Right Column: Dispatch Request Card */}
-        <div className="lg:col-span-7">
-          <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-5 sm:p-6 space-y-4">
-            {/* Step 1: Origin */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-200 text-xs font-bold uppercase tracking-wider">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>1. Pickup Landmark & Merchant</span>
-                </div>
-                <span className="text-[10px] text-slate-400">Step 1 of 3</span>
-              </div>
+        {/* SECTION 2: DELIVERY DESTINATION */}
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm sm:text-base">
+              <Navigation className="w-4 h-4 text-slate-500" />
+              <span>2. Delivery Destination (Recipient)</span>
+            </div>
+            <span className="text-xs text-slate-400 font-medium">Step 2 of 3</span>
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Merchant / Shop Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Al-Ihsan Textiles"
-                    value={formData.senderName}
-                    onChange={(e) => setFormData({ ...formData, senderName: e.target.value })}
-                    className="w-full rounded-lg px-3 py-2 text-xs transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone / WhatsApp *</label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="0803..."
-                    value={formData.senderPhone}
-                    onChange={(e) => setFormData({ ...formData, senderPhone: e.target.value })}
-                    className="w-full rounded-lg px-3 py-2 text-xs transition"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Pickup Market Landmark *</label>
-                  <select
-                    value={formData.senderLandmark}
-                    onChange={(e) => setFormData({ ...formData, senderLandmark: e.target.value })}
-                    className="w-full rounded-lg px-3 py-2 text-xs transition"
-                  >
-                    {KANO_LANDMARKS.map((landmark) => (
-                      <option key={landmark.id} value={landmark.id}>
-                        {landmark.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Shop / Stall / Exact Gate *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Block B, Line 3, Shop 14"
-                    value={formData.senderDetail}
-                    onChange={(e) => setFormData({ ...formData, senderDetail: e.target.value })}
-                    className="w-full rounded-lg px-3 py-2 text-xs transition"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Recipient / Customer Name *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Hajiya Maryam S. Danbatta"
+                value={formData.recipientName}
+                onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 text-sm transition"
+              />
             </div>
 
-            {/* Step 2: Destination */}
-            <div className="space-y-2.5 pt-3.5 border-t border-slate-200 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-200 text-xs font-bold uppercase tracking-wider">
-                  <Navigation className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                  <span>2. Delivery Destination & Recipient</span>
-                </div>
-                <span className="text-[10px] text-slate-400">Step 2 of 3</span>
-              </div>
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Recipient Phone Number *
+              </label>
+              <input
+                type="tel"
+                required
+                placeholder="08156661246"
+                value={formData.recipientPhone}
+                onChange={(e) => setFormData({ ...formData, recipientPhone: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 text-sm transition"
+              />
+            </div>
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Customer / Recipient Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Hajiya Maryam"
-                    value={formData.recipientName}
-                    onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
-                    className="w-full rounded-lg px-3 py-2 text-xs transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Customer Phone Number *</label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="0815..."
-                    value={formData.recipientPhone}
-                    onChange={(e) => setFormData({ ...formData, recipientPhone: e.target.value })}
-                    className="w-full rounded-lg px-3 py-2 text-xs transition"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Destination Area / Landmark *</label>
-                  <select
-                    value={formData.recipientLandmark}
-                    onChange={(e) => setFormData({ ...formData, recipientLandmark: e.target.value })}
-                    className="w-full rounded-lg px-3 py-2 text-xs transition"
-                  >
-                    {KANO_LANDMARKS.map((landmark) => (
-                      <option key={landmark.id} value={landmark.id}>
-                        {landmark.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">House / Gate / Landmark Description *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Near Coronation Hall Gate, Nassarawa GRA"
-                    value={formData.recipientDetail}
-                    onChange={(e) => setFormData({ ...formData, recipientDetail: e.target.value })}
-                    className="w-full rounded-lg px-3 py-2 text-xs transition"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Destination Area / Landmark *
+              </label>
+              <select
+                value={formData.recipientLandmark}
+                onChange={(e) => setFormData({ ...formData, recipientLandmark: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 text-sm transition"
+              >
+                {KANO_LANDMARKS.map((landmark) => (
+                  <option key={landmark.id} value={landmark.id}>
+                    {landmark.name} ({landmark.hausaName})
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Step 3: Package Category & COD */}
-            <div className="space-y-2.5 pt-3.5 border-t border-slate-200 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-200 text-xs font-bold uppercase tracking-wider">
-                  <Package className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                  <span>3. Package & Cash-on-Delivery (COD)</span>
-                </div>
-                <span className="text-[10px] text-slate-400">Step 3 of 3</span>
-              </div>
-
-              {/* Category Pills (Subdued, calm) */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {CATEGORIES.map((cat) => {
-                  const isSelected = formData.itemCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, itemCategory: cat.id })}
-                      className={`p-2 rounded-xl text-center border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-600 dark:text-emerald-300 font-bold shadow-sm'
-                          : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
-                      }`}
-                    >
-                      <span className="text-base block mb-0.5">{cat.icon}</span>
-                      <span className="text-[10px] block leading-tight">{cat.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* COD Toggle Box (Clean & calm) */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex items-center space-x-2.5">
-                  <input
-                    type="checkbox"
-                    id="cod-switch"
-                    checked={formData.isCod}
-                    onChange={(e) => setFormData({ ...formData, isCod: e.target.checked })}
-                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
-                  />
-                  <label htmlFor="cod-switch" className="text-xs cursor-pointer">
-                    <span className="font-bold text-slate-800 dark:text-slate-200 block">Cash on Delivery (COD) Required</span>
-                    <span className="text-slate-500 text-[11px]">Courier collects item cost before releasing parcel</span>
-                  </label>
-                </div>
-
-                {formData.isCod && (
-                  <div className="flex items-center space-x-1.5 bg-white dark:bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700">
-                    <span className="text-xs text-slate-500 font-bold">₦</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="500"
-                      value={formData.itemValue}
-                      onChange={(e) => setFormData({ ...formData, itemValue: e.target.value })}
-                      className="w-24 bg-transparent text-sm font-mono font-bold text-slate-900 dark:text-white focus:outline-none"
-                    />
-                  </div>
-                )}
-              </div>
+            <div>
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                House / Gate / Landmark Address *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. House No. 12, Coronation Hall Road"
+                value={formData.recipientDetail}
+                onChange={(e) => setFormData({ ...formData, recipientDetail: e.target.value })}
+                className="w-full rounded-xl px-4 py-3 text-sm transition"
+              />
             </div>
-
-            {/* Pricing Summary (Balanced & Authoritative) */}
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
-                  Flat Kano Corridor Delivery Rate
-                </span>
-                <div className="text-xl font-bold text-slate-900 dark:text-white font-mono flex items-baseline space-x-2">
-                  <span>₦{deliveryFee.toLocaleString()}</span>
-                  <span className="text-[11px] font-sans font-medium text-emerald-600 dark:text-emerald-400">Guaranteed Flat</span>
-                </div>
-                <span className="text-[10px] text-slate-500">
-                  {selectedSenderLandmark.name.split(' ')[0]} → {selectedRecipientLandmark.name.split(' ')[0]}
-                </span>
-              </div>
-
-              {formData.isCod && (
-                <div className="text-right border-l border-slate-200 dark:border-slate-800 pl-4">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
-                    Net Vendor Remittance
-                  </span>
-                  <div className="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                    ₦{netVendorPayout.toLocaleString()}
-                  </div>
-                  <span className="text-[10px] text-slate-400">Auto-remitted post delivery</span>
-                </div>
-              )}
-            </div>
-
-            {/* Primary Action Button (Calm, authoritative emerald) */}
-            <button
-              type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl text-center text-sm shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <span>Dispatch Express Fimrash Courier</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+          </div>
         </div>
-      </div>
+
+        {/* SECTION 3: PARCEL DETAILS & PAYMENT OPTION */}
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center space-x-2 text-slate-900 dark:text-white font-bold text-sm sm:text-base">
+              <Package className="w-4 h-4 text-slate-500" />
+              <span>3. Parcel & Delivery Payment</span>
+            </div>
+            <span className="text-xs text-slate-400 font-medium">Step 3 of 3</span>
+          </div>
+
+          {/* Parcel Category Chips */}
+          <div>
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              Select Package Type:
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {CATEGORIES.map((cat) => {
+                const isSelected = formData.itemCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, itemCategory: cat.id })}
+                    className={`p-3 rounded-xl text-left border transition-all flex items-center space-x-2.5 cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-600 dark:text-emerald-300 font-bold shadow-2xs'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-xl shrink-0">{cat.icon}</span>
+                    <span className="text-xs sm:text-sm font-medium leading-tight">{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Package Description Note */}
+          <div>
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              Package Description / Special Handling Notes (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. 3 bundles of Swiss lace in black polythene bag"
+              value={formData.itemDescription}
+              onChange={(e) => setFormData({ ...formData, itemDescription: e.target.value })}
+              className="w-full rounded-xl px-4 py-3 text-sm transition"
+            />
+          </div>
+
+          {/* Delivery Fee Payment Option: Who Pays? */}
+          <div className="space-y-2 pt-2">
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Who Pays the Delivery Fee?
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label 
+                className={`p-4 rounded-xl border cursor-pointer transition flex items-start space-x-3 ${
+                  formData.paymentMode === 'pay_on_delivery'
+                    ? 'bg-emerald-50/70 border-emerald-500 dark:bg-emerald-950/30 dark:border-emerald-600'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMode"
+                  value="pay_on_delivery"
+                  checked={formData.paymentMode === 'pay_on_delivery'}
+                  onChange={() => setFormData({ ...formData, paymentMode: 'pay_on_delivery' })}
+                  className="mt-1 w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500"
+                />
+                <div>
+                  <span className="block text-sm font-bold text-slate-900 dark:text-white">
+                    Recipient Pays on Arrival
+                  </span>
+                  <span className="text-xs text-slate-500 block mt-0.5">
+                    Courier collects ₦{deliveryFee.toLocaleString()} from recipient when handing over parcel.
+                  </span>
+                </div>
+              </label>
+
+              <label 
+                className={`p-4 rounded-xl border cursor-pointer transition flex items-start space-x-3 ${
+                  formData.paymentMode === 'prepaid'
+                    ? 'bg-emerald-50/70 border-emerald-500 dark:bg-emerald-950/30 dark:border-emerald-600'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMode"
+                  value="prepaid"
+                  checked={formData.paymentMode === 'prepaid'}
+                  onChange={() => setFormData({ ...formData, paymentMode: 'prepaid' })}
+                  className="mt-1 w-4 h-4 text-emerald-600 border-slate-300 focus:ring-emerald-500"
+                />
+                <div>
+                  <span className="block text-sm font-bold text-slate-900 dark:text-white">
+                    Sender Prepaids Fee
+                  </span>
+                  <span className="text-xs text-slate-500 block mt-0.5">
+                    Sender pays the ₦{deliveryFee.toLocaleString()} fee upfront; zero cash to collect from customer.
+                  </span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Pricing Summary Card */}
+        <div className="p-4 sm:p-5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <span className="text-xs uppercase font-bold text-slate-400 block tracking-wider">
+              Flat Intra-Kano Delivery Rate
+            </span>
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white font-mono flex items-baseline space-x-2 mt-0.5">
+              <span>₦{deliveryFee.toLocaleString()}</span>
+              <span className="text-xs font-sans font-semibold text-emerald-600 dark:text-emerald-400">Fixed Rate</span>
+            </div>
+            <span className="text-xs text-slate-500 block mt-0.5">
+              {selectedSenderLandmark.name.split(' ')[0]} → {selectedRecipientLandmark.name.split(' ')[0]}
+            </span>
+          </div>
+
+          <div className="text-right">
+            <span className="text-xs uppercase font-bold text-slate-400 block tracking-wider">
+              Payment Method
+            </span>
+            <span className="text-sm font-bold text-slate-900 dark:text-white block mt-1">
+              {formData.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery (Cash)' : 'Prepaid by Sender'}
+            </span>
+          </div>
+        </div>
+
+        {/* Big Submit Button */}
+        <button
+          type="submit"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-xl text-center text-sm sm:text-base shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer"
+        >
+          <span>Dispatch Fimrash Express Courier</span>
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      </form>
     </div>
   );
 }

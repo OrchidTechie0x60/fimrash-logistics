@@ -7,7 +7,7 @@ import ReconciliationHub from './components/ReconciliationHub';
 import AuthGate from './components/AuthGate';
 import { KANO_LANDMARKS } from './data/kanoLandmarks';
 
-// Initial realistic Kano intra-state pilot orders
+// Standard Kano intra-state parcel deliveries (Courier delivery fee only)
 const INITIAL_DELIVERIES = [
   {
     id: 'del_101',
@@ -22,13 +22,11 @@ const INITIAL_DELIVERIES = [
     recipientPhone: '08156661246',
     recipientLandmark: KANO_LANDMARKS.find(l => l.id === 'nassarawa-gra'),
     recipientDetail: 'House No. 12, Coronation Hall Road, Nassarawa GRA',
-    itemCategory: 'Fabrics & Fashion',
+    itemCategory: 'Fabrics & Textiles',
     itemDescription: '3 bundles Super-Magnum Shadda lace',
-    isCod: true,
-    itemValue: 18500,
+    paymentMode: 'pay_on_delivery', // recipient pays courier fee on arrival
     deliveryFee: 1200,
-    netVendorPayout: 17300,
-    vendorSettled: false,
+    feeCollected: false,
     assignedRider: {
       name: 'Musa Garba (Rider #04)',
       phone: '08156661246',
@@ -51,11 +49,9 @@ const INITIAL_DELIVERIES = [
     recipientDetail: 'Nana Hall Hostel Gate, BUK New Campus',
     itemCategory: 'Phones & Gadgets',
     itemDescription: 'Samsung Galaxy A15 Screen Replacement & Charger',
-    isCod: false,
-    itemValue: 0,
+    paymentMode: 'prepaid', // sender prepaid delivery fee
     deliveryFee: 1400,
-    netVendorPayout: 0,
-    vendorSettled: true,
+    feeCollected: true,
     assignedRider: {
       name: 'Musa Garba (Rider #04)',
       phone: '08156661246',
@@ -76,13 +72,11 @@ const INITIAL_DELIVERIES = [
     recipientPhone: '08055556677',
     recipientLandmark: KANO_LANDMARKS.find(l => l.id === 'zoo-road'),
     recipientDetail: 'Beside Sahad Stores, Zoo Road',
-    itemCategory: 'Provisions & Groceries',
+    itemCategory: 'Food & Provisions',
     itemDescription: '2 cartons imported beverage powders',
-    isCod: true,
-    itemValue: 24000,
+    paymentMode: 'pay_on_delivery',
     deliveryFee: 900,
-    netVendorPayout: 23100,
-    vendorSettled: true,
+    feeCollected: true,
     assignedRider: {
       name: 'Ibrahim Aliyu (Rider #02)',
       phone: '08012345678',
@@ -110,13 +104,14 @@ export default function App() {
   });
 
   const [deliveries, setDeliveries] = useState(() => {
-    const saved = localStorage.getItem('fimrash_deliveries');
+    const saved = localStorage.getItem('fimrash_deliveries_v2');
     return saved ? JSON.parse(saved) : INITIAL_DELIVERIES;
   });
   
+  // Courier delivery fee cash held in rider pouch
   const [riderCashInHand, setRiderCashInHand] = useState(() => {
-    const saved = localStorage.getItem('fimrash_rider_cash');
-    return saved ? parseFloat(saved) : 0;
+    const saved = localStorage.getItem('fimrash_rider_cash_v2');
+    return saved ? parseFloat(saved) : 900;
   });
 
   const [activeTrackingCode, setActiveTrackingCode] = useState(null);
@@ -138,11 +133,11 @@ export default function App() {
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('fimrash_deliveries', JSON.stringify(deliveries));
+    localStorage.setItem('fimrash_deliveries_v2', JSON.stringify(deliveries));
   }, [deliveries]);
 
   useEffect(() => {
-    localStorage.setItem('fimrash_rider_cash', riderCashInHand.toString());
+    localStorage.setItem('fimrash_rider_cash_v2', riderCashInHand.toString());
   }, [riderCashInHand]);
 
   // Handlers
@@ -160,26 +155,27 @@ export default function App() {
     }));
   };
 
-  const handleVerifyOtpAndDeliver = (deliveryId, cashAmount) => {
+  const handleVerifyOtpAndDeliver = (deliveryId, feeToCollect) => {
     setDeliveries(prev => prev.map(del => {
       if (del.id === deliveryId) {
-        return { ...del, status: 'delivered', otpVerifiedAt: new Date().toLocaleTimeString() };
+        return { 
+          ...del, 
+          status: 'delivered', 
+          feeCollected: true,
+          otpVerifiedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+        };
       }
       return del;
     }));
 
-    if (cashAmount > 0) {
-      setRiderCashInHand(prev => prev + cashAmount);
+    if (feeToCollect > 0) {
+      setRiderCashInHand(prev => prev + feeToCollect);
     }
   };
 
-  const handleSettleVendorPayout = (deliveryId) => {
-    setDeliveries(prev => prev.map(del => {
-      if (del.id === deliveryId) {
-        return { ...del, vendorSettled: true };
-      }
-      return del;
-    }));
+  // Station Manager reconciles and collects physical cash from riders
+  const handleRemitRiderCash = () => {
+    setRiderCashInHand(0);
   };
 
   const handleLogout = () => {
@@ -205,12 +201,12 @@ export default function App() {
 
       {/* Main Content with Mobile Bottom Padding for App Dock */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-28 md:pb-8 relative z-10">
-        {/* Tab 1: Booking (Public) */}
+        {/* Tab 1: Booking Form (Public - Standard Sized) */}
         {activeTab === 'booking' && (
           <BookingForm onDeliveryCreated={handleDeliveryCreated} />
         )}
 
-        {/* Tab 2: Tracking (Public) */}
+        {/* Tab 2: Live Tracking (Public) */}
         {activeTab === 'tracking' && (
           <LiveTracking
             deliveries={deliveries}
@@ -218,7 +214,7 @@ export default function App() {
           />
         )}
 
-        {/* Tab 3: Rider Console (Protected: Courier Only) */}
+        {/* Tab 3: Courier Console (Protected: Courier Only) */}
         {activeTab === 'rider' && (
           currentUser && (currentUser.role === 'rider' || currentUser.role === 'admin') ? (
             <RiderConsole
@@ -235,13 +231,13 @@ export default function App() {
           )
         )}
 
-        {/* Tab 4: COD Settlement Hub (Protected: Operations Admin Only) */}
+        {/* Tab 4: Delivery Ledger & Cash Vault (Protected: Station Admin Only) */}
         {activeTab === 'ledger' && (
           currentUser && currentUser.role === 'admin' ? (
             <ReconciliationHub
               deliveries={deliveries}
               riderCashInHand={riderCashInHand}
-              onSettleVendorPayout={handleSettleVendorPayout}
+              onRemitRiderCash={handleRemitRiderCash}
             />
           ) : (
             <AuthGate
@@ -253,19 +249,19 @@ export default function App() {
         )}
       </main>
 
-      {/* Luxury Footer (Hidden or streamlined on small screens) */}
-      <footer className="border-t border-white/5 dark:border-white/5 bg-slate-950/80 dark:bg-slate-950/80 backdrop-blur-md py-6 text-xs text-slate-400 relative z-10 mb-14 md:mb-0">
+      {/* Calm Institutional Footer */}
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md py-6 text-xs text-slate-500 dark:text-slate-400 relative z-10 mb-14 md:mb-0">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-            <span className="font-black text-white dark:text-white tracking-tight">FIMRASH LOGISTICS SERVICES</span>
-            <span className="text-slate-600">|</span>
-            <span className="text-slate-400">Kano Intra-State Metropolitan Mesh</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
+            <span className="font-bold text-slate-900 dark:text-white tracking-tight">FIMRASH LOGISTICS SERVICES</span>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+            <span>Kano Intra-State Goods &amp; Parcel Dispatch</span>
           </div>
           <div className="flex items-center space-x-3 text-[11px]">
             <span>Hubs: Kantin Kwari • Singer • Farm Centre • Nassarawa GRA</span>
-            <span className="text-slate-700">•</span>
-            <span className="text-emerald-400 font-bold">Engineered by OrchidByte Solutions</span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Engineered by OrchidByte Solutions</span>
           </div>
         </div>
       </footer>
