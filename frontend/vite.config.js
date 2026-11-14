@@ -8,4 +8,12 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true,
+    allowedHosts: true, // Allows all preview and cloud sandbox hosts (e.g. *.vercel.run, *.vercel.app)
+  },
+  preview: {
+    host: true,
+    allowedHosts: true,
+  }
 })

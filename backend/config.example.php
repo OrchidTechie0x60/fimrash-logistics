@@ -10,3 +10,4 @@ return [
     'username' => 'whogohost_user_fimrash_user', // Replace with your cPanel database user
     'password' => 'YourStrongDbPasswordHere',    // Replace with your database user password
 ];
+
