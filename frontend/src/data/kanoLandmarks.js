@@ -211,3 +211,4 @@ export function calculateDeliveryFare(pickupLandmarkId, dropoffLandmarkId) {
   const estimated = Math.round((800 * combined) / 50) * 50;
   return Math.max(800, Math.min(2400, estimated));
 }
+

@@ -156,14 +156,14 @@ export default function App() {
   const activeDeliveriesCount = deliveries.filter(d => d.status !== 'delivered').length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-ambient-grid text-slate-100 flex flex-col font-sans relative selection:bg-emerald-500 selection:text-slate-950">
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         activeDeliveriesCount={activeDeliveriesCount}
       />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
         {activeTab === 'booking' && (
           <BookingForm onDeliveryCreated={(d) => {
             handleDeliveryCreated(d);
@@ -194,16 +194,19 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer Info */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-4 text-center text-xs text-slate-400">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div>
-            <span className="font-bold text-slate-300">Fimrash Logistics Services</span> • Intra-State Kano Metropolis Dispatch MVP
+      {/* Luxury Footer */}
+      <footer className="border-t border-white/5 bg-slate-950/80 backdrop-blur-md py-6 text-xs text-slate-400 relative z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
+            <span className="font-black text-white tracking-tight">FIMRASH LOGISTICS SERVICES</span>
+            <span className="text-slate-600">|</span>
+            <span className="text-slate-400">Kano Intra-State Metropolitan Mesh</span>
           </div>
           <div className="flex items-center space-x-3 text-[11px]">
-            <span>Kano Operating Hub: Kantin Kwari & Farm Centre</span>
-            <span>•</span>
-            <span className="text-emerald-400">Engineered by OrchidByte Solutions</span>
+            <span>Hubs: Kantin Kwari • Singer • Farm Centre • Nassarawa GRA</span>
+            <span className="text-slate-700">•</span>
+            <span className="text-emerald-400 font-bold">Engineered by OrchidByte Solutions</span>
           </div>
         </div>
       </footer>
