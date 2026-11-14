@@ -1,6 +1,6 @@
 <?php
 // Fimrash Logistics Services - Database Handler
-// Supports SQLite (default zero-config local) & MySQL (Production)
+// Optimized for Whogohost (cPanel MySQL) & Local Development (SQLite)
 
 namespace Fimrash;
 
@@ -12,24 +12,29 @@ class Database {
 
     public static function getConnection(): PDO {
         if (self::$instance === null) {
-            $dbDriver = getenv('DB_CONNECTION') ?: 'sqlite';
-            
-            try {
-                if ($dbDriver === 'mysql') {
-                    $host = getenv('DB_HOST') ?: '127.0.0.1';
-                    $port = getenv('DB_PORT') ?: '3306';
-                    $database = getenv('DB_DATABASE') ?: 'fimrash_logistics';
-                    $username = getenv('DB_USERNAME') ?: 'root';
-                    $password = getenv('DB_PASSWORD') ?: '';
+            // 1. Check for Whogohost / cPanel config file
+            $configFile = __DIR__ . '/../config.php';
+            $config = file_exists($configFile) ? require($configFile) : [];
 
+            // 2. Read configuration parameters with fallbacks
+            $driver   = $config['driver']   ?? getenv('DB_CONNECTION') ?: 'sqlite';
+            $host     = $config['host']     ?? getenv('DB_HOST')       ?: '127.0.0.1';
+            $port     = $config['port']     ?? getenv('DB_PORT')       ?: '3306';
+            $database = $config['database'] ?? getenv('DB_DATABASE')   ?: 'fimrash_logistics';
+            $username = $config['username'] ?? getenv('DB_USERNAME')   ?: 'root';
+            $password = $config['password'] ?? getenv('DB_PASSWORD')   ?: '';
+
+            try {
+                if ($driver === 'mysql') {
                     $dsn = "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
                     self::$instance = new PDO($dsn, $username, $password, [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                         PDO::ATTR_EMULATE_PREPARES => false,
+                        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
                     ]);
                 } else {
-                    // SQLite storage for immediate local operation
+                    // SQLite storage for zero-config local testing
                     $dbPath = __DIR__ . '/../storage/fimrash.sqlite';
                     $dbDir = dirname($dbPath);
                     if (!is_dir($dbDir)) {
@@ -48,9 +53,11 @@ class Database {
                 }
             } catch (PDOException $e) {
                 http_response_code(500);
+                header('Content-Type: application/json; charset=utf-8');
                 echo json_encode([
-                    'error' => 'Database connection failed',
-                    'message' => $e->getMessage()
+                    'error' => 'Database connection failed on Whogohost server',
+                    'message' => $e->getMessage(),
+                    'driver' => $driver
                 ]);
                 exit;
             }
@@ -67,4 +74,3 @@ class Database {
         }
     }
 }
-

@@ -1,0 +1,11 @@
+{
+  "name": "fimrash-logistics",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Fimrash Logistics Services - Kano Metropolitan Courier Dispatch Platform",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "preview": "npm run preview --prefix frontend"
+  }
+}

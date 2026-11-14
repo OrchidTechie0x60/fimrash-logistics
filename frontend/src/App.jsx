@@ -6,6 +6,14 @@ import RiderConsole from './components/RiderConsole';
 import ReconciliationHub from './components/ReconciliationHub';
 import AuthGate from './components/AuthGate';
 import { KANO_LANDMARKS } from './data/kanoLandmarks';
+import { 
+  getDeliveriesApi, 
+  createDeliveryApi, 
+  updateDeliveryStatusApi, 
+  verifyOtpApi, 
+  remitRiderCashApi, 
+  isBackendConnected 
+} from './services/api';
 
 // Standard Kano intra-state parcel deliveries (Courier delivery fee only)
 const INITIAL_DELIVERIES = [
@@ -165,22 +173,70 @@ export default function App() {
     localStorage.setItem('fimrash_rider_cash_v2', riderCashInHand.toString());
   }, [riderCashInHand]);
 
-  // Handlers
-  const handleDeliveryCreated = (newDelivery) => {
+  // On Mount: Sync with Whogohost MySQL API if configured
+  useEffect(() => {
+    async function syncBackendData() {
+      if (isBackendConnected()) {
+        const res = await getDeliveriesApi(deliveries);
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped = res.data.map(d => ({
+            id: d.id,
+            trackingCode: d.tracking_code || d.trackingCode,
+            otpCode: d.otp_code || d.otpCode,
+            status: d.status || 'pending',
+            senderType: d.sender_type || 'home',
+            senderName: d.sender_name || d.senderName,
+            senderPhone: d.sender_phone || d.senderPhone,
+            senderLandmark: typeof d.sender_landmark_id === 'string'
+              ? (KANO_LANDMARKS.find(l => l.id === d.sender_landmark_id) || KANO_LANDMARKS[0])
+              : d.senderLandmark,
+            senderDetail: d.sender_landmark_detail || d.senderDetail,
+            recipientType: d.recipient_type || 'home',
+            recipientName: d.recipient_name || d.recipientName,
+            recipientPhone: d.recipient_phone || d.recipientPhone,
+            recipientLandmark: typeof d.recipient_landmark_id === 'string'
+              ? (KANO_LANDMARKS.find(l => l.id === d.recipient_landmark_id) || KANO_LANDMARKS[6])
+              : d.recipientLandmark,
+            recipientDetail: d.recipient_landmark_detail || d.recipientDetail,
+            itemCategory: d.item_category || d.itemCategory,
+            itemDescription: d.item_description || d.itemDescription,
+            isFragile: Boolean(d.is_fragile),
+            paymentMode: d.payment_mode || d.paymentMode,
+            deliveryFee: parseFloat(d.delivery_fee || d.deliveryFee || 1000),
+            feeCollected: Boolean(d.cod_collected_by_rider),
+            assignedRider: {
+              name: 'Musa Garba (Rider #04)',
+              phone: '08156661246',
+              bikeNumber: 'KN-942-TRN'
+            },
+            createdAt: d.created_at ? new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today'
+          }));
+          setDeliveries(mapped);
+        }
+      }
+    }
+    syncBackendData();
+  }, []);
+
+  // Handlers with Whogohost API sync
+  const handleDeliveryCreated = async (newDelivery) => {
     setDeliveries(prev => [newDelivery, ...prev]);
     setActiveTrackingCode(newDelivery.trackingCode);
+    await createDeliveryApi(newDelivery);
   };
 
-  const handleUpdateDeliveryStatus = (deliveryId, newStatus) => {
+  const handleUpdateDeliveryStatus = async (deliveryId, newStatus) => {
     setDeliveries(prev => prev.map(del => {
       if (del.id === deliveryId) {
         return { ...del, status: newStatus };
       }
       return del;
     }));
+    await updateDeliveryStatusApi(deliveryId, newStatus);
   };
 
-  const handleVerifyOtpAndDeliver = (deliveryId, feeToCollect) => {
+  const handleVerifyOtpAndDeliver = async (deliveryId, feeToCollect) => {
+    const target = deliveries.find(d => d.id === deliveryId);
     setDeliveries(prev => prev.map(del => {
       if (del.id === deliveryId) {
         return { 
@@ -196,11 +252,16 @@ export default function App() {
     if (feeToCollect > 0) {
       setRiderCashInHand(prev => prev + feeToCollect);
     }
+
+    if (target) {
+      await verifyOtpApi(deliveryId, target.otpCode);
+    }
   };
 
   // Station Manager reconciles and collects physical cash from riders
-  const handleRemitRiderCash = () => {
+  const handleRemitRiderCash = async () => {
     setRiderCashInHand(0);
+    await remitRiderCashApi();
   };
 
   const handleLogout = () => {

@@ -1,8 +1,9 @@
 import React from 'react';
 import { 
   Package, Truck, Search, Banknote, ShieldCheck, Zap, 
-  Radio, Sun, Moon, LogOut, User, Lock
+  Radio, Sun, Moon, LogOut, User, Lock, Server
 } from 'lucide-react';
+import { isBackendConnected } from '../services/api';
 
 export default function Navbar({ 
   activeTab, 
@@ -42,6 +43,16 @@ export default function Navbar({
                 <span className="text-[9px] sm:text-[10px] font-semibold uppercase px-1.5 sm:px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                   KANO METRO
                 </span>
+                {isBackendConnected() ? (
+                  <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>API Connected</span>
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                    Local Mesh
+                  </span>
+                )}
               </div>
               <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium hidden md:block">
                 Intra-State Goods &amp; Parcel Courier Dispatch
