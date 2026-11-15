@@ -288,9 +288,16 @@ export default function App() {
       {/* Main Content Area offset by the permanent vertical left sidebar on desktop */}
       <div className="flex-1 flex flex-col min-w-0 md:pl-64 lg:pl-72 transition-all">
         <main className="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-28 md:pb-8 relative z-10">
-          {/* Tab 1: Booking Form (Public - Standard Sized) */}
+          {/* Tab 1: Booking Form (Public - Standard Sized with GIGL-Style Hero Hub) */}
           {activeTab === 'booking' && (
-            <BookingForm onDeliveryCreated={handleDeliveryCreated} />
+            <BookingForm 
+              onDeliveryCreated={handleDeliveryCreated}
+              deliveries={deliveries}
+              onNavigateToTracking={(code) => {
+                setActiveTrackingCode(code);
+                setActiveTab('tracking');
+              }}
+            />
           )}
 
           {/* Tab 2: Live Tracking (Public) */}

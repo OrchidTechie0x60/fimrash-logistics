@@ -291,3 +291,68 @@ export function calculateDeliveryFare(pickupLandmarkId, dropoffLandmarkId) {
   const estimated = Math.round((850 * combined) / 50) * 50;
   return Math.max(800, Math.min(2200, estimated));
 }
+
+// Route distance & transit time estimator for Kano corridors
+export function calculateRouteMetrics(pickupLandmarkId, dropoffLandmarkId) {
+  const pickup = KANO_LANDMARKS.find(l => l.id === pickupLandmarkId);
+  const dropoff = KANO_LANDMARKS.find(l => l.id === dropoffLandmarkId);
+
+  if (!pickup || !dropoff) {
+    return { distanceKm: 4.5, estMinutes: 25, corridor: 'Metropolitan Direct' };
+  }
+
+  if (pickup.id === dropoff.id) {
+    return { distanceKm: 1.2, estMinutes: 12, corridor: 'Local Neighborhood' };
+  }
+
+  const key = `${pickup.id}_${dropoff.id}`;
+  const reverseKey = `${dropoff.id}_${pickup.id}`;
+
+  const customMatrix = {
+    'gyadi-gyadi_naibawa': { km: 4.2, mins: 22, corridor: 'Zaria Road Corridor' },
+    'gyadi-gyadi_hotoro-gra': { km: 6.8, mins: 28, corridor: 'Maiduguri Road Bypass' },
+    'gyadi-gyadi_tarauni-gra': { km: 3.1, mins: 15, corridor: 'Court Road / Tarauni' },
+    'kwari-textiles_nassarawa-gra': { km: 5.4, mins: 25, corridor: 'State Road Arterial' },
+    'farm-centre_zoo-road': { km: 3.8, mins: 18, corridor: 'Trade Fair Complex Link' },
+    'tarauni-gra_buk-new-campus': { km: 11.2, mins: 40, corridor: 'BUK Road Expressway' },
+    'singer-market_zoo-road': { km: 4.9, mins: 24, corridor: 'Ibrahim Taiwo Arterial' },
+    'sabon-gari_buk-new-campus': { km: 13.5, mins: 45, corridor: 'Katsina / BUK Link' },
+    'kwari-textiles_farm-centre': { km: 4.6, mins: 22, corridor: 'Bata / Post Office Rd' },
+    'hotoro-gra_naibawa': { km: 5.2, mins: 25, corridor: 'Eastern Ring Road Link' },
+  };
+
+  if (customMatrix[key]) {
+    return {
+      distanceKm: customMatrix[key].km,
+      estMinutes: customMatrix[key].mins,
+      corridor: customMatrix[key].corridor
+    };
+  }
+  if (customMatrix[reverseKey]) {
+    return {
+      distanceKm: customMatrix[reverseKey].km,
+      estMinutes: customMatrix[reverseKey].mins,
+      corridor: customMatrix[reverseKey].corridor
+    };
+  }
+
+  // Zone distance approximation
+  let km = 5.5;
+  let mins = 30;
+  if (pickup.zoneId === dropoff.zoneId) {
+    km = 3.6;
+    mins = 20;
+  } else if (pickup.zoneId === 'Z4_OUTER_RING' || dropoff.zoneId === 'Z4_OUTER_RING') {
+    km = 12.8;
+    mins = 48;
+  } else {
+    km = 7.5;
+    mins = 35;
+  }
+
+  return {
+    distanceKm: km,
+    estMinutes: mins,
+    corridor: `${pickup.name.split(' ')[0]} ⇄ ${dropoff.name.split(' ')[0]} Axis`
+  };
+}

@@ -10,10 +10,22 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    allowedHosts: true, // Allows all preview and cloud sandbox hosts (e.g. *.vercel.run, *.vercel.app)
+    allowedHosts: [
+      'sb-xyfuax29p9rv.vercel.run',
+      '.vercel.run',
+      '.vercel.app',
+      'localhost',
+      '127.0.0.1',
+    ],
   },
   preview: {
     host: true,
-    allowedHosts: true,
+    allowedHosts: [
+      'sb-xyfuax29p9rv.vercel.run',
+      '.vercel.run',
+      '.vercel.app',
+      'localhost',
+      '127.0.0.1',
+    ],
   }
 })
