@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
-import { 
-  Package, Truck, Search, Banknote, ShieldCheck, Zap, 
-  Sun, Moon, LogOut, User, Lock, Menu, X, Compass, ChevronRight,
-  Radio, CheckCircle2
+import React, { useEffect, useState } from 'react';
+import {
+  Package, Truck, Search, Banknote,
+  Sun, Moon, LogOut, Lock, Menu, X, Compass, ChevronRight,
 } from 'lucide-react';
-import { isBackendConnected } from '../services/api';
+import { checkHealth } from '../services/api';
 
 export default function Navbar({ 
   activeTab, 
   setActiveTab, 
-  activeDeliveriesCount,
   theme,
   setTheme,
   currentUser,
   onLogout
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [apiOnline, setApiOnline] = useState(null); // null = checking
+
+  useEffect(() => {
+    let cancelled = false;
+    const ping = () => checkHealth().then(() => !cancelled && setApiOnline(true)).catch(() => !cancelled && setApiOnline(false));
+    ping();
+    const timer = setInterval(ping, 60000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, []);
 
   const mainTabs = [
     { 
@@ -29,7 +36,7 @@ export default function Navbar({
     { 
       id: 'tracking', 
       label: 'Live Tracking', 
-      description: 'Radar & 4-digit OTP',
+      description: 'Waybill status & timeline',
       icon: Search, 
       badge: null, 
       restricted: false 
@@ -42,15 +49,15 @@ export default function Navbar({
       label: 'Courier Console', 
       description: 'Rider dispatch & OTP check',
       icon: Truck, 
-      badge: activeDeliveriesCount > 0 ? `${activeDeliveriesCount} Active` : null, 
+      badge: null, 
       restricted: true 
     },
     { 
       id: 'ledger', 
-      label: 'Delivery Ledger', 
-      description: 'Station cash vault & audit',
+      label: 'Station Ops', 
+      description: 'Dispatch, cash & fleet',
       icon: Banknote, 
-      badge: 'Vault', 
+      badge: null, 
       restricted: true 
     }
   ];
@@ -136,16 +143,20 @@ export default function Navbar({
 
           {/* Connection status badge */}
           <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-xs">
-            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Mesh Status:</span>
-            {isBackendConnected() ? (
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Service:</span>
+            {apiOnline ? (
               <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center space-x-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Whogohost Live</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Online</span>
               </span>
             ) : (
-              <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center space-x-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                <span>Local Mesh</span>
+              <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border flex items-center space-x-1.5 ${
+                apiOnline === false
+                  ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${apiOnline === false ? 'bg-rose-500' : 'bg-slate-400'}`} />
+                <span>{apiOnline === false ? 'Unreachable' : 'Checking'}</span>
               </span>
             )}
           </div>
@@ -281,7 +292,7 @@ export default function Navbar({
                     {currentUser.name}
                   </span>
                   <span className="text-[10px] uppercase font-semibold text-emerald-600 dark:text-emerald-400 block truncate">
-                    {currentUser.role === 'admin' ? 'Station Controller' : 'Courier Rider #04'}
+                    {currentUser.role === 'admin' ? 'Station Staff' : `Courier · ${currentUser.bikeNumber}`}
                   </span>
                 </div>
               </div>
@@ -410,11 +421,6 @@ export default function Navbar({
                 <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
                 {tab.restricted && !currentUser && (
                   <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500" />
-                )}
-                {tab.badge && (
-                  <span className="absolute -top-1 -right-2 bg-emerald-600 text-white text-[8px] font-bold px-1 rounded-full">
-                    {tab.badge.split(' ')[0]}
-                  </span>
                 )}
               </div>
               <span className="text-[10px] mt-0.5 tracking-tight font-medium">

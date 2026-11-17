@@ -1,22 +1,19 @@
-# Fimrash Logistics REST API - Apache Rewrite for Whogohost / cPanel
+# Fimrash Logistics REST API - Apache rewrite for Whogohost / cPanel
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Handle Authorization Header in Apache
+    # Pass the Authorization header through to PHP (stripped by default on many Apache/CGI setups)
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Allow access to existing files/directories
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-
-    # Route everything to index.php
     RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
-# Security: Deny direct access to hidden files
-<FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
+Options -Indexes
 
+# Deny hidden files
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

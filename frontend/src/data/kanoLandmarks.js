@@ -243,7 +243,11 @@ export const KANO_LANDMARKS = [
   }
 ];
 
-// Fare calculation algorithm for Kano intra-state
+export const getLandmark = (id) => KANO_LANDMARKS.find(l => l.id === id) || null;
+
+// Fare calculation algorithm for Kano intra-state.
+// Display-only estimate: the server (backend/src/Pricing.php) is authoritative and
+// backend/tests/fare_parity.php fails if the two ever disagree.
 export function calculateDeliveryFare(pickupLandmarkId, dropoffLandmarkId) {
   const pickup = KANO_LANDMARKS.find(l => l.id === pickupLandmarkId);
   const dropoff = KANO_LANDMARKS.find(l => l.id === dropoffLandmarkId);
@@ -261,7 +265,8 @@ export function calculateDeliveryFare(pickupLandmarkId, dropoffLandmarkId) {
     (pickup.id === 'hotoro-gra' && dropoff.id === 'tarauni-gra') ||
     (pickup.id === 'gyadi-gyadi' && dropoff.id === 'tarauni-gra') ||
     (pickup.id === 'tarauni-gra' && dropoff.id === 'gyadi-gyadi') ||
-    (pickup.id === 'farm-centre' && dropoff.id === 'gyadi-gyadi');
+    (pickup.id === 'farm-centre' && dropoff.id === 'gyadi-gyadi') ||
+    (pickup.id === 'gyadi-gyadi' && dropoff.id === 'farm-centre');
 
   if (isCloseResidentialPair) {
     return 900; // Flat ₦900 for immediate neighborhood home deliveries!

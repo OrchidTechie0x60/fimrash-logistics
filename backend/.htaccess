@@ -1,0 +1,18 @@
+# Fimrash Logistics - backend root guard.
+# Best practice: point the (sub)domain's document root at backend/public.
+# If the whole backend/ folder sits inside public_html instead, this file keeps
+# config.php, src/, bin/, storage/ and tests/ unreachable and forwards requests to public/.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteRule ^(config\.php|config\.example\.php|src/|bin/|storage/|tests/) - [F,L]
+    RewriteCond %{REQUEST_URI} !/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<FilesMatch "^(config\.php|config\.example\.php|.*\.sqlite.*|.*\.key)$">
+    Require all denied
+</FilesMatch>

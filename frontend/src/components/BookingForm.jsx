@@ -1,38 +1,43 @@
-import React, { useState } from 'react';
-import { KANO_LANDMARKS, calculateDeliveryFare, calculateRouteMetrics } from '../data/kanoLandmarks';
+import React, { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
+import { KANO_LANDMARKS, calculateDeliveryFare, calculateRouteMetrics, getLandmark } from '../data/kanoLandmarks';
 import KanoRouteMap from './KanoRouteMap';
-import { 
-  MapPin, Navigation, Package, ShieldCheck, ArrowRight, 
-  CheckCircle2, Copy, Phone, MessageSquare, Clock, Zap, Store,
-  Compass, ChevronDown, ChevronUp, Home, Building2, AlertCircle,
-  Calculator, Search, Truck, ExternalLink, Shield, Sparkles, RefreshCw,
-  Printer, QrCode, Banknote
+import { createDelivery } from '../services/api';
+import { saveMyBooking } from '../lib/myBookings';
+import { isNigerianMobile, naira, trackingUrl, whatsappNumber } from '../lib/format';
+import {
+  MapPin, Navigation, Package, ShieldCheck, ArrowRight,
+  CheckCircle2, Copy, Phone, MessageSquare, Zap, Store,
+  Compass, ChevronDown, ChevronUp, Home, AlertCircle,
+  Calculator, Search, Truck, Sparkles,
+  Printer, Banknote
 } from 'lucide-react';
 
-export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavigateToTracking }) {
+const EMPTY_FORM = {
+  senderType: 'home', // 'home' | 'market' | 'office'
+  senderName: '',
+  senderPhone: '',
+  senderLandmark: 'gyadi-gyadi',
+  senderDetail: '',
+  recipientType: 'home',
+  recipientName: '',
+  recipientPhone: '',
+  recipientLandmark: 'naibawa',
+  recipientDetail: '',
+  itemCategory: 'Cakes, Pastries & Bakes',
+  itemDescription: '',
+  isFragile: true,
+  deliveryNote: '',
+  paymentMode: 'pay_on_delivery', // 'pay_on_delivery' or 'prepaid'
+  isCodActive: false, // Optional Merchant Cash-on-Delivery
+  codAmount: '',
+};
+
+export default function BookingForm({ onNavigateToTracking }) {
   // Top Hero Utility Tab (GIGL-Style: Ship / Track / Fare Calculator)
   const [heroTab, setHeroTab] = useState('ship'); // 'ship' | 'track' | 'quote'
 
-  // Booking Form State
-  const [formData, setFormData] = useState({
-    senderType: 'home', // 'home' | 'market' | 'office'
-    senderName: '',
-    senderPhone: '',
-    senderLandmark: 'gyadi-gyadi', // Default to active residential hub
-    senderDetail: '',
-    recipientType: 'home',
-    recipientName: '',
-    recipientPhone: '',
-    recipientLandmark: 'naibawa', // Default recipient
-    recipientDetail: '',
-    itemCategory: 'Cakes, Pastries & Bakes',
-    itemDescription: '',
-    isFragile: true,
-    deliveryNote: '',
-    paymentMode: 'pay_on_delivery', // 'pay_on_delivery' or 'prepaid'
-    isCodActive: false, // Optional Merchant Cash-on-Delivery
-    codAmount: '',
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
   // Radar Map Target Selector: 'pickup' or 'dropoff'
   const [mapTarget, setMapTarget] = useState('dropoff');
@@ -44,18 +49,18 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
     category: 'Cakes, Pastries & Bakes',
   });
 
-  // Hero Quick Track Search State
-  const [quickTrackQuery, setQuickTrackQuery] = useState(deliveries[0]?.trackingCode || 'FMR-KN-1092');
-  const [trackedShipment, setTrackedShipment] = useState(deliveries[0] || null);
-  const [trackSearchError, setTrackSearchError] = useState(false);
+  const [quickTrackQuery, setQuickTrackQuery] = useState('');
 
   const [showMap, setShowMap] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
+  const [smsSent, setSmsSent] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
-  const selectedSenderLandmark = KANO_LANDMARKS.find(l => l.id === formData.senderLandmark) || KANO_LANDMARKS[5];
-  const selectedRecipientLandmark = KANO_LANDMARKS.find(l => l.id === formData.recipientLandmark) || KANO_LANDMARKS[8];
+  const selectedSenderLandmark = getLandmark(formData.senderLandmark) || KANO_LANDMARKS[5];
+  const selectedRecipientLandmark = getLandmark(formData.recipientLandmark) || KANO_LANDMARKS[8];
 
   const deliveryFee = calculateDeliveryFare(formData.senderLandmark, formData.recipientLandmark);
   const routeMetrics = calculateRouteMetrics(formData.senderLandmark, formData.recipientLandmark);
@@ -84,6 +89,14 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
     { label: '📱 Farm Centre → Zoo Road (Gadgets)', from: 'farm-centre', to: 'zoo-road', category: 'Phones & Gadgets' },
   ];
 
+  // Real, scannable QR on the waybill: it opens the public tracking page.
+  useEffect(() => {
+    if (!bookingSuccess) return;
+    QRCode.toDataURL(trackingUrl(bookingSuccess.trackingCode), { margin: 1, width: 220, errorCorrectionLevel: 'M' })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(''));
+  }, [bookingSuccess]);
+
   const handleApplyPreset = (preset) => {
     setFormData(prev => ({
       ...prev,
@@ -102,21 +115,10 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
     }
   };
 
-  // Quick Tracker Search
   const handleQuickTrackSearch = (e) => {
     e?.preventDefault();
-    const query = quickTrackQuery.trim().toLowerCase();
-    const found = deliveries.find(d => 
-      d.trackingCode?.toLowerCase() === query || 
-      d.recipientPhone?.includes(query) ||
-      d.senderPhone?.includes(query)
-    );
-    if (found) {
-      setTrackedShipment(found);
-      setTrackSearchError(false);
-    } else {
-      setTrackSearchError(true);
-    }
+    const code = quickTrackQuery.trim().toUpperCase();
+    if (code) onNavigateToTracking(code);
   };
 
   // Transfer Calculator Details into Booking Form
@@ -131,68 +133,61 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
     setHeroTab('ship');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const trackingCode = `FMR-KN-${randomSuffix}`;
-    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
-    const codVal = formData.isCodActive ? Math.max(0, parseFloat(formData.codAmount || 0)) : 0;
-
-    const newDelivery = {
-      id: 'del_' + Date.now(),
-      trackingCode,
-      otpCode,
-      status: 'pending',
-      senderType: formData.senderType,
-      senderName: formData.senderName || (formData.senderType === 'home' ? 'Fatima Bakes' : 'Al-Ihsan Textiles'),
-      senderPhone: formData.senderPhone || '08031112233',
-      senderLandmark: selectedSenderLandmark,
-      senderDetail: formData.senderDetail || (formData.senderType === 'home' ? 'House 14, Behind Veterinary Clinic, Court Road' : 'Block B, Line 3, Shop 14'),
-      recipientType: formData.recipientType,
-      recipientName: formData.recipientName || 'Amina Sani',
-      recipientPhone: formData.recipientPhone || '08156661246',
-      recipientLandmark: selectedRecipientLandmark,
-      recipientDetail: formData.recipientDetail || 'Near Central Mosque, Naibawa',
-      itemCategory: formData.itemCategory,
-      itemDescription: formData.itemDescription || 'Home Baked Goods / Parcel',
-      isFragile: formData.isFragile,
-      deliveryNote: formData.deliveryNote,
-      codAmount: codVal,
-      deliveryFee,
-      paymentMode: formData.paymentMode,
-      feeCollected: false,
-      assignedRider: {
-        name: 'Musa Garba (Rider #04)',
-        phone: '08156661246',
-        bikeNumber: 'KN-942-TRN'
-      },
-      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    // Await server sync to ensure canonical ID & OTP are unified
-    const confirmed = await onDeliveryCreated(newDelivery);
-    setIsSubmitting(false);
-    setBookingSuccess(confirmed || newDelivery);
+  const validate = () => {
+    if (!isNigerianMobile(formData.senderPhone)) return 'Enter a valid sender phone number (e.g. 08031234567).';
+    if (!isNigerianMobile(formData.recipientPhone)) return 'Enter a valid recipient phone number (e.g. 08031234567).';
+    if (formData.isCodActive && !(Number(formData.codAmount) > 0)) return 'Enter the item price to collect, or switch off Cash-on-Delivery.';
+    return null;
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const problem = validate();
+    if (problem) {
+      setSubmitError(problem);
+      return;
+    }
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const { delivery, smsSent: sent } = await createDelivery(formData);
+      saveMyBooking(delivery);
+      setSmsSent(Boolean(sent));
+      setBookingSuccess(delivery);
+      setFormData(EMPTY_FORM);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch { /* clipboard blocked */ }
   };
 
   const handlePrintWaybill = () => {
     window.print();
   };
 
-  // SUCCESS WAYBILL PASS (Thermal Receipt & QR Code Handshake)
+  // SUCCESS WAYBILL PASS (Printable receipt with scannable tracking QR)
   if (bookingSuccess) {
     const isCod = Number(bookingSuccess.codAmount || 0) > 0;
     const itemCost = Number(bookingSuccess.codAmount || 0);
     const fee = Number(bookingSuccess.deliveryFee || 0);
-    const totalToCollect = bookingSuccess.paymentMode === 'pay_on_delivery' ? (itemCost + fee) : itemCost;
+    const totalToCollect = Number(bookingSuccess.amountDue || 0);
+    const senderLandmark = getLandmark(bookingSuccess.senderLandmarkId);
+    const recipientLandmark = getLandmark(bookingSuccess.recipientLandmarkId);
+    const shareText =
+      `*FIMRASH LOGISTICS*\nHello ${bookingSuccess.recipientName}, your parcel from ${bookingSuccess.senderName} is on its way.\n` +
+      `Waybill: ${bookingSuccess.trackingCode}\nTrack: ${trackingUrl(bookingSuccess.trackingCode)}\n` +
+      (totalToCollect > 0 ? `Pay on delivery: ${naira(totalToCollect)}\n` : '') +
+      `\n🔐 Handover code: *${bookingSuccess.otp}*\nGive this code to the rider ONLY after you have received and checked your parcel.`;
 
     return (
       <div className="max-w-2xl mx-auto py-6 sm:py-10 print:py-0 print:m-0 print:max-w-full">
@@ -220,7 +215,9 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                 <span className="text-xs font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
                   Waybill Logged
                 </span>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Confirmed Dispatch</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  {bookingSuccess.assignedRider ? `Courier: ${bookingSuccess.assignedRider.name}` : 'Finding a courier'}
+                </h2>
               </div>
             </div>
 
@@ -232,6 +229,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                   onClick={() => copyToClipboard(bookingSuccess.trackingCode)}
                   className="text-slate-400 hover:text-emerald-600 transition print:hidden"
                   title="Copy"
+                  aria-label="Copy waybill number"
                 >
                   <Copy className="w-4 h-4" />
                 </button>
@@ -240,58 +238,36 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
             </div>
           </div>
 
-          {/* 4-Digit Recipient Handshake OTP & Scannable QR Code */}
+          {/* Recipient Handover Code (sender's copy) & Tracking QR */}
           <div className="my-6 p-5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-1 text-center sm:text-left">
+            <div className="space-y-1 text-center sm:text-left print:hidden">
               <div className="flex items-center justify-center sm:justify-start space-x-2 text-amber-800 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4" />
-                <span>Recipient 4-Digit Handshake OTP</span>
+                <span>Recipient Handover Code</span>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-sm">
-                Recipient presents this 4-digit secret code to the courier <span className="font-semibold underline">only after inspecting and receiving the parcel</span>.
+                {smsSent
+                  ? 'We have sent this code to the recipient by SMS. '
+                  : 'Send this code to the recipient now (WhatsApp button below). '}
+                They give it to the courier <span className="font-semibold underline">only after receiving the parcel</span>. The courier never sees it — do not tell the courier.
               </p>
               <div className="text-3xl font-mono font-bold text-amber-900 dark:text-amber-400 tracking-widest bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-amber-300 dark:border-amber-700/50 shadow-sm text-center inline-block mt-2">
-                {bookingSuccess.otpCode}
+                {bookingSuccess.otp}
               </div>
             </div>
+            <p className="hidden print:block text-xs text-slate-700 max-w-sm">
+              Handover code is sent privately to the recipient. Courier: collect it from the recipient at handover.
+            </p>
 
-            {/* Scannable Optical Handshake Pass (SVG QR Code) */}
-            <div className="flex flex-col items-center p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <svg width="90" height="90" viewBox="0 0 100 100" className="text-slate-900 dark:text-white fill-current">
-                {/* Position Marker TL */}
-                <rect x="5" y="5" width="28" height="28" fill="currentColor" rx="2" />
-                <rect x="9" y="9" width="20" height="20" fill="var(--bg-card, #fff)" rx="1" />
-                <rect x="13" y="13" width="12" height="12" fill="currentColor" rx="1" />
-                {/* Position Marker TR */}
-                <rect x="67" y="5" width="28" height="28" fill="currentColor" rx="2" />
-                <rect x="71" y="9" width="20" height="20" fill="var(--bg-card, #fff)" rx="1" />
-                <rect x="75" y="13" width="12" height="12" fill="currentColor" rx="1" />
-                {/* Position Marker BL */}
-                <rect x="5" y="67" width="28" height="28" fill="currentColor" rx="2" />
-                <rect x="9" y="71" width="20" height="20" fill="var(--bg-card, #fff)" rx="1" />
-                <rect x="13" y="75" width="12" height="12" fill="currentColor" rx="1" />
-                {/* Optical Data Grid Matrix */}
-                <rect x="38" y="10" width="6" height="6" fill="currentColor" />
-                <rect x="50" y="10" width="6" height="6" fill="currentColor" />
-                <rect x="42" y="22" width="6" height="6" fill="currentColor" />
-                <rect x="54" y="22" width="6" height="6" fill="currentColor" />
-                <rect x="10" y="42" width="6" height="6" fill="currentColor" />
-                <rect x="22" y="42" width="6" height="6" fill="currentColor" />
-                <rect x="34" y="42" width="6" height="6" fill="currentColor" />
-                <rect x="46" y="42" width="8" height="8" fill="#059669" />
-                <rect x="58" y="42" width="6" height="6" fill="currentColor" />
-                <rect x="70" y="42" width="6" height="6" fill="currentColor" />
-                <rect x="82" y="42" width="6" height="6" fill="currentColor" />
-                <rect x="40" y="58" width="6" height="6" fill="currentColor" />
-                <rect x="52" y="58" width="6" height="6" fill="currentColor" />
-                <rect x="40" y="70" width="6" height="6" fill="currentColor" />
-                <rect x="52" y="70" width="6" height="6" fill="currentColor" />
-                <rect x="70" y="70" width="6" height="6" fill="currentColor" />
-                <rect x="82" y="70" width="6" height="6" fill="currentColor" />
-                <rect x="76" y="82" width="6" height="6" fill="currentColor" />
-              </svg>
+            {/* Scannable tracking QR */}
+            <div className="flex flex-col items-center p-3 bg-white rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt={`QR code to track ${bookingSuccess.trackingCode}`} width="110" height="110" />
+              ) : (
+                <div className="w-[110px] h-[110px]" />
+              )}
               <span className="text-[9px] font-mono font-bold text-slate-500 uppercase mt-1">
-                Scan Handshake Pass
+                Scan to track
               </span>
             </div>
           </div>
@@ -302,7 +278,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Pickup Location</span>
                 <span className="font-bold text-slate-900 dark:text-white">
-                  {bookingSuccess.senderLandmark?.name || 'Kano Origin'}
+                  {senderLandmark?.name || 'Kano Origin'}
                 </span>
                 <span className="text-slate-500 block text-xs">{bookingSuccess.senderDetail}</span>
                 <span className="text-slate-400 block text-[11px] mt-0.5">Sender: {bookingSuccess.senderName} ({bookingSuccess.senderPhone})</span>
@@ -310,7 +286,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
               <div className="text-right">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Delivery Location</span>
                 <span className="font-bold text-slate-900 dark:text-white">
-                  {bookingSuccess.recipientLandmark?.name || 'Kano Destination'}
+                  {recipientLandmark?.name || 'Kano Destination'}
                 </span>
                 <span className="text-slate-500 block text-xs">{bookingSuccess.recipientDetail}</span>
                 <span className="text-slate-400 block text-[11px] mt-0.5">Recipient: {bookingSuccess.recipientName} ({bookingSuccess.recipientPhone})</span>
@@ -336,45 +312,52 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
               <div className="text-right space-y-0.5">
                 {isCod && (
                   <div className="text-xs text-slate-500">
-                    Item CoD: <strong className="text-slate-800 dark:text-slate-200 font-mono">₦{itemCost.toLocaleString()}</strong>
+                    Item CoD: <strong className="text-slate-800 dark:text-slate-200 font-mono">{naira(itemCost)}</strong>
                   </div>
                 )}
                 <div className="text-xs text-slate-500">
-                  Delivery Fee: <strong className="text-slate-800 dark:text-slate-200 font-mono">₦{fee.toLocaleString()}</strong>
+                  Delivery Fee: <strong className="text-slate-800 dark:text-slate-200 font-mono">{naira(fee)}</strong>
                 </div>
                 <div className="text-base sm:text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 pt-0.5">
-                  Total Cash on Arrival: ₦{totalToCollect.toLocaleString()}
+                  Total Cash on Arrival: {naira(totalToCollect)}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-3 print:hidden">
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
+            <a
+              href={`https://wa.me/${whatsappNumber(bookingSuccess.recipientPhone)}?text=${encodeURIComponent(shareText)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl text-center text-xs sm:text-sm transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm sm:col-span-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Send code to recipient on WhatsApp</span>
+            </a>
+
             <button
               onClick={handlePrintWaybill}
               className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold py-3.5 px-5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center space-x-2 cursor-pointer border border-slate-700 shadow-sm"
             >
               <Printer className="w-4 h-4" />
-              <span>Print Waybill Pass / Save PDF</span>
+              <span>Print Waybill (no code)</span>
             </button>
 
             <button
-              onClick={() => {
-                const text = `*FIMRASH LOGISTICS DISPATCH PASS*\nWaybill: ${bookingSuccess.trackingCode}\nFrom: ${bookingSuccess.senderLandmark?.name} (${bookingSuccess.senderName})\nTo: ${bookingSuccess.recipientLandmark?.name} (${bookingSuccess.recipientName})\nTotal Due: ₦${totalToCollect.toLocaleString()} (${bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery' : 'Prepaid Fee'}${isCod ? ' + CoD Item' : ''})\nRecipient Handshake OTP: ${bookingSuccess.otpCode}`;
-                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-              }}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl text-center text-xs sm:text-sm transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
+              onClick={() => onNavigateToTracking(bookingSuccess.trackingCode)}
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3.5 px-5 rounded-xl text-center text-xs sm:text-sm transition cursor-pointer border border-slate-200 dark:border-slate-700 flex items-center justify-center space-x-2"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>Share Pass on WhatsApp</span>
+              <Search className="w-4 h-4" />
+              <span>Track this parcel</span>
             </button>
 
             <button
               onClick={() => setBookingSuccess(null)}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3.5 px-5 rounded-xl text-center text-xs sm:text-sm transition cursor-pointer border border-slate-200 dark:border-slate-700"
+              className="text-emerald-700 dark:text-emerald-400 font-bold py-2 text-xs sm:text-sm hover:underline sm:col-span-2"
             >
-              Book Another Dispatch
+              Book another dispatch
             </button>
           </div>
         </div>
@@ -452,50 +435,27 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
         </div>
 
         {/* -----------------------------------------------------------------------
-            TAB 2 CONTENT: QUICK WAYBILL TRACKER (GIGL Embedded Radar)
+            TAB 2 CONTENT: QUICK WAYBILL TRACKER
            ----------------------------------------------------------------------- */}
         {heroTab === 'track' && (
           <div className="relative z-10 glass-card rounded-2xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-                  <span>Waybill Tracking Radar</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Enter your Fimrash Waybill code or sender/recipient phone number.
-                </p>
-              </div>
-
-              {/* Sample Quick Selector */}
-              {deliveries.length > 0 && (
-                <div className="flex items-center space-x-1.5 overflow-x-auto text-xs py-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase shrink-0">Sample:</span>
-                  {deliveries.slice(0, 3).map(d => (
-                    <button
-                      key={d.id}
-                      type="button"
-                      onClick={() => {
-                        setQuickTrackQuery(d.trackingCode);
-                        setTrackedShipment(d);
-                        setTrackSearchError(false);
-                      }}
-                      className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-emerald-600 hover:text-white transition cursor-pointer border border-slate-200 dark:border-slate-700"
-                    >
-                      {d.trackingCode}
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <Truck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <span>Track a Waybill</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Enter the Fimrash waybill code from your SMS, WhatsApp message or printed pass.
+              </p>
             </div>
 
-            {/* Input Bar */}
             <form onSubmit={handleQuickTrackSearch} className="flex gap-2 sm:gap-3">
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
                 <input
                   type="text"
-                  placeholder="e.g. FMR-KN-1092 or 08156661246..."
+                  aria-label="Waybill code"
+                  placeholder="e.g. FMR-KN-7Q2X9A"
                   value={quickTrackQuery}
                   onChange={(e) => setQuickTrackQuery(e.target.value)}
                   className="w-full rounded-xl pl-11 pr-4 py-3 text-sm sm:text-base font-mono uppercase font-semibold transition"
@@ -509,112 +469,6 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
-
-            {trackSearchError && (
-              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-700 dark:text-rose-400 flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>No active waybill found matching "{quickTrackQuery}". Please verify the tracking code.</span>
-              </div>
-            )}
-
-            {/* Live Visual Milestone Stepper (GIGL-Style 5 Stages) */}
-            {trackedShipment && (
-              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <span className="text-xs uppercase font-bold text-slate-400">Waybill</span>
-                    <span className="text-lg font-mono font-bold text-slate-900 dark:text-white ml-2">
-                      {trackedShipment.trackingCode}
-                    </span>
-                    <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                      {trackedShipment.itemCategory}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-2 text-xs">
-                    <span className="text-slate-400">Status:</span>
-                    <span className="font-bold uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">
-                      {trackedShipment.status.replace('_', ' ')}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 5-Step Progress Bar */}
-                {(() => {
-                  const stepMap = { pending: 1, assigned: 2, picked_up: 3, in_transit: 4, arrived: 4, delivered: 5 };
-                  const current = stepMap[trackedShipment.status] || 1;
-                  const stages = [
-                    { title: 'Order Logged', desc: 'Registered' },
-                    { title: 'Courier Assigned', desc: 'Musa Garba' },
-                    { title: 'Picked Up', desc: 'Package In Hand' },
-                    { title: 'In Transit', desc: 'On Corridor' },
-                    { title: 'Delivered', desc: 'OTP Confirmed' },
-                  ];
-
-                  return (
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
-                      {stages.map((st, idx) => {
-                        const stepNum = idx + 1;
-                        const isDone = stepNum <= current;
-                        const isCurrent = stepNum === current;
-                        return (
-                          <div 
-                            key={idx} 
-                            className={`p-2.5 rounded-xl border text-center transition-all ${
-                              isCurrent
-                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm'
-                                : isDone
-                                ? 'bg-slate-100 dark:bg-slate-900/80 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200'
-                                : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-400 opacity-60'
-                            }`}
-                          >
-                            <div className="flex items-center justify-center space-x-1.5 mb-1">
-                              <span className={`w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center ${
-                                isDone ? 'bg-emerald-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-                              }`}>
-                                {isDone ? '✓' : stepNum}
-                              </span>
-                              <span className="text-[11px] font-bold tracking-tight">{st.title}</span>
-                            </div>
-                            <span className="text-[10px] text-slate-500 block truncate">{st.desc}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-
-                {/* Courier Details Card */}
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 flex items-center justify-center text-emerald-700 dark:text-emerald-400 font-bold">
-                      <Truck className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-900 dark:text-white block">
-                        {trackedShipment.assignedRider?.name || 'Assigned Courier'}
-                      </span>
-                      <span className="text-slate-500">
-                        Bike: {trackedShipment.assignedRider?.bikeNumber || 'KN-942-TRN'} • Route: {trackedShipment.senderLandmark?.name?.split(' ')[0]} → {trackedShipment.recipientLandmark?.name?.split(' ')[0]}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    {onNavigateToTracking && (
-                      <button
-                        type="button"
-                        onClick={() => onNavigateToTracking(trackedShipment.trackingCode)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition flex items-center space-x-1 cursor-pointer"
-                      >
-                        <span>Full Radar Telemetry</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -726,7 +580,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
             {/* Direct Book CTA */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
               <span className="text-xs text-slate-500">
-                Guaranteed rate with zero surge fees. Includes 4-digit anti-theft OTP security.
+                Flat corridor rate with zero surge fees. Includes a private 4-digit handover code.
               </span>
               <button
                 type="button"
@@ -1005,7 +859,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                     <input
                       type="tel"
                       required
-                      placeholder="08156661246"
+                      placeholder="e.g. 08091234567"
                       value={formData.recipientPhone}
                       onChange={(e) => setFormData({ ...formData, recipientPhone: e.target.value })}
                       className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base font-mono transition"
@@ -1121,10 +975,12 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
-                      Brief Parcel Description
+                      Brief Parcel Description *
                     </label>
                     <input
                       type="text"
+                      required
+                      maxLength={255}
                       placeholder="e.g. 10-inch Birthday Cake / 3 Abaya Dresses / Small Chops Box"
                       value={formData.itemDescription}
                       onChange={(e) => setFormData({ ...formData, itemDescription: e.target.value })}
@@ -1316,13 +1172,20 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                 </div>
               </div>
 
+              {submitError && (
+                <div role="alert" className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 text-xs sm:text-sm text-rose-700 dark:text-rose-400 flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{submitError}</span>
+                </div>
+              )}
+
               {/* Big Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold py-4 px-6 rounded-xl text-center text-sm sm:text-base shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer"
               >
-                <span>{isSubmitting ? 'Securing Kano Courier Match...' : 'Dispatch Fimrash Express Courier'}</span>
+                <span>{isSubmitting ? 'Booking your courier…' : 'Book Fimrash Courier'}</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
             </form>

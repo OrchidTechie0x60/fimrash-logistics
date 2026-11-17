@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Navigation, Compass, ShieldAlert, Sparkles } from 'lucide-react';
+import { Compass } from 'lucide-react';
 
-export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelectLandmark, activeRiderName = 'Musa Garba' }) {
+export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelectLandmark, activeRiderName = null }) {
   const [hoveredNode, setHoveredNode] = useState(null);
 
   // Scaled coordinates representing Kano Metropolitan Layout on a 600x380 SVG grid
@@ -23,7 +23,10 @@ export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelect
     { id: 'rijiyar-zaki', name: 'Rijiyar Zaki', label: 'Rijiyar Zaki / Gwarzo', x: 100, y: 195, zone: 'Zone 4' },
     { id: 'kurna-rijiyar-lemo', name: 'Kurna', label: 'Kurna / Katsina Rd', x: 250, y: 75, zone: 'Zone 4' },
     { id: 'sharada-industrial', name: 'Sharada', label: 'Sharada Industrial', x: 200, y: 290, zone: 'Zone 4' },
-    { id: 'hotoro-gra', name: 'Hotoro', label: 'Hotoro GRA / NNPC', x: 530, y: 270, zone: 'Zone 3' }
+    { id: 'hotoro-gra', name: 'Hotoro', label: 'Hotoro GRA / NNPC', x: 530, y: 270, zone: 'Zone 3' },
+    { id: 'kofar-wambai', name: 'K. Wambai', label: 'Kofar Wambai Market', x: 285, y: 185, zone: 'Zone 1' },
+    { id: 'bata-fagge', name: 'Bata', label: 'Bata / Fagge Axis', x: 355, y: 150, zone: 'Zone 1' },
+    { id: 'unguwa-uku', name: 'Unguwa Uku', label: 'Unguwa Uku / Zaria Rd Park', x: 320, y: 350, zone: 'Zone 4' }
   ];
 
   const pNode = MAP_NODES.find(n => n.id === pickupLandmark?.id) || MAP_NODES[4]; // Default Kwari
@@ -53,10 +56,10 @@ export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelect
             <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight flex items-center space-x-1.5">
               <span>Kano Metropolis Corridor Radar</span>
               <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 rounded font-semibold">
-                Live Mesh
+                Approximate
               </span>
             </h3>
-            <p className="text-[10px] text-slate-500">Interactive intra-city landmark routing</p>
+            <p className="text-[10px] text-slate-500">Landmark-to-landmark route (not live GPS)</p>
           </div>
         </div>
 
@@ -184,15 +187,17 @@ export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelect
         </svg>
 
         {/* Courier Dispatch Capsule */}
+        {activeRiderName && (
         <div className="absolute bottom-2.5 left-2.5 bg-slate-900/95 px-2.5 py-1.5 rounded-lg border border-slate-800 flex items-center space-x-2 text-xs shadow-md">
           <div className="w-5 h-5 rounded-md bg-emerald-950 text-emerald-400 flex items-center justify-center text-[10px]">
             🏍️
           </div>
           <div>
             <span className="font-bold text-white text-[10px] block leading-tight">{activeRiderName}</span>
-            <span className="text-[9px] text-slate-400">En route via State Rd Corridor</span>
+            <span className="text-[9px] text-slate-400">Assigned courier</span>
           </div>
         </div>
+        )}
 
         {/* Legend */}
         <div className="absolute top-2.5 right-2.5 bg-slate-900/95 px-2 py-1 rounded-lg border border-slate-800 flex items-center space-x-2 text-[9px] text-slate-400">

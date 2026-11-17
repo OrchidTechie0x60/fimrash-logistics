@@ -24,3 +24,7 @@ Thumbs.db
 .idea/
 full_codebase.txt
 
+
+# Backend secrets & local data
+backend/config.php
+backend/storage/

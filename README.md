@@ -1,4 +1,4 @@
-# Fimrash Logistics Services Platform (MVP)
+# Fimrash Logistics Services Platform
 
 > **Hyper-Local Courier Dispatch, Landmark Routing & Anti-Theft COD Settlement Platform for Kano Metropolis**
 
@@ -16,9 +16,9 @@ Traditional address-based logistics systems fail in northern Nigerian commercial
 
 Fimrash Logistics solves this with:
 1. **Landmark-First Navigation**: Direct pickup/dropoff selection matching Kano’s commercial nodes (Kantin Kwari, Singer, Farm Centre, Sabon Gari, Nassarawa GRA, Hotoro, BUK).
-2. **Anti-Theft OTP Handshake**: A 4-digit recipient one-time passcode required before a rider can mark an order delivered.
-3. **Automated COD Ledger**: Seamless reconciliation of item cost collected in cash versus delivery fees, with instant vendor payouts.
-4. **Lightweight PWA Design**: Under 120KB initial bundle size, fast loading on 3G/EDGE mobile data, installable directly to the home screen without app store overhead.
+2. **Anti-Theft OTP Handshake**: A server-generated 4-digit code that only the sender and recipient ever see. The rider must get it from the recipient at handover; 5 wrong attempts lock the delivery.
+3. **Cash & COD Ledger**: Every naira a rider collects is recorded per delivery. The station receives each rider's pouch (shortfalls are recorded) and pays vendors separately with a payment reference.
+4. **Shareable tracking links**: `/track/FMR-KN-XXXXXX` works from SMS, WhatsApp or the QR code printed on the waybill, and shows no customer phone numbers or addresses.
 
 ---
 
@@ -26,10 +26,10 @@ Fimrash Logistics solves this with:
 
 | Layer | Technology | Rationale & Performance Metrics |
 |---|---|---|
-| **Frontend** | React 18 + Vite + Tailwind CSS | Built with Vite for rapid sub-second loads (<120KB gzipped). Zero bloated dependencies. Mobile-first PWA design for riders and dispatchers. |
-| **Backend API** | PHP 8.x / Laravel REST API | Headless JSON API without heavy Blade/session overhead. Native compatibility with low-cost Nigerian cPanel/shared hosting. ACID database transactions for COD reconciliation. |
+| **Frontend** | React 19 + Vite + Tailwind CSS (Vercel) | ~113KB gzipped JS. Mobile-first screens for customers, riders and station staff. |
+| **Backend API** | Plain PHP 8.1+ REST API (no framework, no Composer) | Runs on cPanel shared hosting. Signed bearer tokens, hashed PINs/passwords, DB-backed rate limiting, transactional cash handling. |
 | **Database** | MySQL (InnoDB) | Strict relational integrity and row-level locking for money balances, waybill state transitions, and audit logs. SQLite supported for zero-friction local testing. |
-| **Notifications** | Termii SMS / WhatsApp Webhooks | Instant dispatch alerts and recipient tracking links sent via lightweight background queues. |
+| **Notifications** | Termii SMS (optional) + WhatsApp share links | When Termii is configured the recipient gets the handover code and tracking link by SMS; otherwise the sender sends it via a one-tap WhatsApp message. |
 
 ---
 
@@ -42,26 +42,48 @@ Fimrash Logistics solves this with:
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (local development)
 
-### 1. Prerequisites
-- **Node.js**: v18+ (v24 recommended)
-- **PHP**: v8.1+
-- **Composer**: v2.x
-- **MySQL**: 8.0+ (or SQLite for local dev)
+Prerequisites: Node.js 18+ and PHP 8.1+ with `pdo_sqlite` (MySQL is only needed in production).
 
-### 2. Frontend Setup
 ```bash
-cd frontend
-npm install
-npm run dev
+# 1. API (SQLite database and signing key are created automatically in backend/storage/)
+cp backend/config.example.php backend/config.php
+#    edit backend/config.php: set 'driver' => 'sqlite' and a bootstrap_admin password (10+ chars)
+php -S localhost:8000 -t backend/public backend/public/index.php
+
+# 2. Frontend (in another terminal). /api is proxied to localhost:8000.
+cd frontend && npm install && npm run dev
 ```
 
-### 3. Backend Setup
+Open http://localhost:5173/ops, sign in with the bootstrap admin, then add riders (with PINs) under **Fleet**.
+
+## 👷 Roles
+
+| Who | Where | Signs in with |
+|---|---|---|
+| Customer / merchant | `/` (book), `/track/<code>` | No account |
+| Rider | `/rider` | Phone number or bike plate + PIN (set by station staff) |
+| Station staff | `/ops` | Email + password |
+
+Command-line admin tools (run on the server or locally):
+
 ```bash
-cd backend
-php -S 127.0.0.1:8080 -t public
+php backend/bin/manage.php create-admin ops2@fimrash.com "Night Shift Manager"
+php backend/bin/manage.php reset-admin-password ops@fimrash.com
+php backend/bin/manage.php set-rider-pin 08031234567
+php backend/bin/manage.php list-riders
 ```
+
+## ✅ Tests
+
+```bash
+php backend/tests/api_test.php      # end-to-end API suite (auth, OTP, state machine, ledger, privacy, rate limits)
+php backend/tests/fare_parity.php   # fails if frontend and backend fare tables disagree
+cd frontend && npm run lint && npm run build
+```
+
+Deployment: see [DEPLOYMENT_GUIDE_VERCEL_WHOGOHOST.md](DEPLOYMENT_GUIDE_VERCEL_WHOGOHOST.md).
 
 ---
 
