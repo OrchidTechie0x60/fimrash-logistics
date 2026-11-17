@@ -1,21 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import KanoRouteMap from './KanoRouteMap';
 import { 
   Search, MapPin, Truck, CheckCircle2, Clock, ShieldCheck, 
-  Phone, AlertCircle, Share2, MessageSquare, Copy, Sparkles, Navigation, Package
+  Phone, AlertCircle, Share2, MessageSquare, Copy, Sparkles, Navigation, Package,
+  Lock, Unlock, Key
 } from 'lucide-react';
 
-export default function LiveTracking({ deliveries, activeTrackingCode }) {
+export default function LiveTracking({ deliveries, activeTrackingCode, currentUser }) {
   const [searchCode, setSearchCode] = useState(activeTrackingCode || (deliveries[0]?.trackingCode || ''));
   const [selectedDelivery, setSelectedDelivery] = useState(
     deliveries.find(d => d.trackingCode.toLowerCase() === searchCode.toLowerCase()) || deliveries[0] || null
   );
   const [copiedOtp, setCopiedOtp] = useState(false);
 
+  // Security: Mask OTP until caller verifies recipient phone last 4 digits or is logged in
+  const isPrivileged = currentUser && (currentUser.role === 'admin' || currentUser.role === 'rider');
+  const [phoneUnlockCode, setPhoneUnlockCode] = useState('');
+  const [isOtpUnlocked, setIsOtpUnlocked] = useState(Boolean(isPrivileged));
+  const [unlockError, setUnlockError] = useState(false);
+
+  useEffect(() => {
+    if (activeTrackingCode) {
+      setSearchCode(activeTrackingCode);
+      const found = deliveries.find(d => d.trackingCode.toLowerCase() === activeTrackingCode.toLowerCase());
+      if (found) {
+        setSelectedDelivery(found);
+      }
+    }
+  }, [activeTrackingCode, deliveries]);
+
+  useEffect(() => {
+    setIsOtpUnlocked(Boolean(isPrivileged));
+    setPhoneUnlockCode('');
+    setUnlockError(false);
+  }, [selectedDelivery?.id, isPrivileged]);
+
   const handleSearch = (e) => {
     e.preventDefault();
-    const found = deliveries.find(d => d.trackingCode.trim().toLowerCase() === searchCode.trim().toLowerCase());
+    const query = searchCode.trim().toLowerCase();
+    const found = deliveries.find(d => 
+      d.trackingCode.trim().toLowerCase() === query ||
+      d.recipientPhone?.includes(query) ||
+      d.senderPhone?.includes(query)
+    );
     setSelectedDelivery(found || null);
+  };
+
+  const handleUnlockOtp = (e) => {
+    e.preventDefault();
+    if (!selectedDelivery) return;
+
+    const cleanInput = phoneUnlockCode.trim().replace(/[^0-9]/g, '');
+    const recipientPhone = String(selectedDelivery.recipientPhone || '');
+    const last4 = recipientPhone.slice(-4);
+
+    if (cleanInput === last4) {
+      setIsOtpUnlocked(true);
+      setUnlockError(false);
+    } else {
+      setUnlockError(true);
+    }
   };
 
   const getStatusStep = (status) => {
@@ -42,7 +86,7 @@ export default function LiveTracking({ deliveries, activeTrackingCode }) {
   ];
 
   const handleCopyOtp = () => {
-    if (!selectedDelivery) return;
+    if (!selectedDelivery || !isOtpUnlocked) return;
     navigator.clipboard.writeText(selectedDelivery.otpCode);
     setCopiedOtp(true);
     setTimeout(() => setCopiedOtp(false), 2000);
@@ -59,7 +103,7 @@ export default function LiveTracking({ deliveries, activeTrackingCode }) {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Real-time courier telemetry, landmark proximity &amp; 4-digit recipient handover OTP.
+              Real-time courier telemetry, landmark proximity &amp; protected 4-digit recipient handover OTP.
             </p>
           </div>
 
@@ -115,7 +159,7 @@ export default function LiveTracking({ deliveries, activeTrackingCode }) {
             <KanoRouteMap
               pickupLandmark={selectedDelivery.senderLandmark}
               dropoffLandmark={selectedDelivery.recipientLandmark}
-              activeRiderName={selectedDelivery.assignedRider.name}
+              activeRiderName={selectedDelivery.assignedRider?.name || 'Musa Garba (Rider #04)'}
             />
 
             {/* Courier Profile Card */}
@@ -125,13 +169,17 @@ export default function LiveTracking({ deliveries, activeTrackingCode }) {
                   🏍️
                 </div>
                 <div>
-                  <span className="font-bold text-slate-900 dark:text-white block text-sm">{selectedDelivery.assignedRider.name}</span>
-                  <span className="text-slate-500 text-xs">Plate: {selectedDelivery.assignedRider.bikeNumber} • Kano Central</span>
+                  <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                    {selectedDelivery.assignedRider?.name || 'Musa Garba (Rider #04)'}
+                  </span>
+                  <span className="text-slate-500 text-xs">
+                    Plate: {selectedDelivery.assignedRider?.bikeNumber || 'KN-942-TRN'} • Kano Metro Corridor
+                  </span>
                 </div>
               </div>
 
               <a
-                href={`tel:${selectedDelivery.assignedRider.phone}`}
+                href={`tel:${selectedDelivery.assignedRider?.phone || '08156661246'}`}
                 className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl font-semibold flex items-center space-x-1.5 transition text-xs"
               >
                 <Phone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -162,19 +210,74 @@ export default function LiveTracking({ deliveries, activeTrackingCode }) {
                   </p>
                 </div>
 
-                {/* Recipient OTP Card */}
-                <div 
-                  onClick={handleCopyOtp}
-                  className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-3.5 rounded-2xl flex items-center space-x-3 cursor-pointer hover:border-amber-400 transition"
-                >
-                  <ShieldCheck className="w-6 h-6 text-amber-700 dark:text-amber-400 shrink-0" />
-                  <div>
-                    <span className="text-[10px] text-amber-800 dark:text-amber-300 uppercase font-bold tracking-wider block">Recipient Delivery OTP</span>
-                    <span className="text-2xl font-bold text-amber-900 dark:text-amber-300 font-mono tracking-widest">{selectedDelivery.otpCode}</span>
+                {/* Recipient OTP Protected Card */}
+                <div className="bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-3.5 rounded-2xl space-y-2 max-w-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1.5 text-amber-800 dark:text-amber-300 text-[10px] uppercase font-bold tracking-wider">
+                      <ShieldCheck className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                      <span>Recipient Delivery OTP</span>
+                    </div>
+                    {isOtpUnlocked && (
+                      <button 
+                        onClick={handleCopyOtp}
+                        className="text-amber-700 dark:text-amber-400 text-xs hover:text-emerald-600 transition"
+                        title="Copy OTP"
+                      >
+                        {copiedOtp ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    )}
                   </div>
-                  <button className="text-amber-700 dark:text-amber-400 text-xs pl-1">
-                    {copiedOtp ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
+
+                  {isOtpUnlocked ? (
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-2xl font-bold text-amber-900 dark:text-amber-300 font-mono tracking-widest">
+                        {selectedDelivery.otpCode}
+                      </span>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
+                        Verified Pass
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-2xl font-bold text-slate-400 font-mono tracking-widest">
+                          ••••
+                        </span>
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold flex items-center space-x-1">
+                          <Lock className="w-3 h-3" />
+                          <span>Protected</span>
+                        </span>
+                      </div>
+
+                      {/* Recipient Verification Challenge */}
+                      <form onSubmit={handleUnlockOtp} className="pt-1">
+                        <label className="text-[10px] text-slate-500 block mb-1">
+                          Recipient Phone Verification (Last 4 digits):
+                        </label>
+                        <div className="flex items-center space-x-1.5">
+                          <input
+                            type="text"
+                            maxLength="4"
+                            placeholder="e.g. 1246"
+                            value={phoneUnlockCode}
+                            onChange={(e) => setPhoneUnlockCode(e.target.value)}
+                            className="w-24 text-xs font-mono font-bold px-2 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700/60 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                          />
+                          <button
+                            type="submit"
+                            className="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+                          >
+                            Reveal
+                          </button>
+                        </div>
+                        {unlockError && (
+                          <span className="text-[10px] text-rose-600 dark:text-rose-400 block mt-1">
+                            Lambar waya ba daidai ba (Incorrect phone digits)
+                          </span>
+                        )}
+                      </form>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -211,20 +314,20 @@ export default function LiveTracking({ deliveries, activeTrackingCode }) {
               <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
                 <div className="border-l-2 border-emerald-600 dark:border-emerald-500 pl-3.5 space-y-0.5">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Pickup Landmark</span>
-                  <span className="font-bold text-slate-900 dark:text-white block">{selectedDelivery.senderLandmark.name}</span>
+                  <span className="font-bold text-slate-900 dark:text-white block">{selectedDelivery.senderLandmark?.name}</span>
                   <span className="text-slate-500 dark:text-slate-400 text-xs block">{selectedDelivery.senderDetail}</span>
                   <span className="text-slate-400 text-[11px] mt-1 block">Sender: {selectedDelivery.senderName}</span>
                 </div>
 
                 <div className="border-l-2 border-slate-400 dark:border-slate-600 pl-3.5 space-y-0.5">
                   <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Delivery Landmark</span>
-                  <span className="font-bold text-slate-900 dark:text-white block">{selectedDelivery.recipientLandmark.name}</span>
+                  <span className="font-bold text-slate-900 dark:text-white block">{selectedDelivery.recipientLandmark?.name}</span>
                   <span className="text-slate-500 dark:text-slate-400 text-xs block">{selectedDelivery.recipientDetail}</span>
                   <span className="text-slate-400 text-[11px] mt-1 block">Recipient: {selectedDelivery.recipientName}</span>
                 </div>
               </div>
 
-              {/* Delivery Fee Notice Card (No vendor charges) */}
+              {/* Delivery Fee & CoD Notice Card */}
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs sm:text-sm">
                 <div>
                   <span className="text-slate-800 dark:text-slate-200 font-bold block text-sm">
@@ -233,17 +336,24 @@ export default function LiveTracking({ deliveries, activeTrackingCode }) {
                       : 'Kuɗin Jigila (Prepaid by Sender)'}
                   </span>
                   <span className="text-slate-500 text-xs">
-                    {selectedDelivery.paymentMode === 'pay_on_delivery'
-                      ? 'Mai karɓa zai biya tsabar kuɗin aikawa ga mai babur lokacin karɓa.'
-                      : 'An riga an biya kuɗin jigila; babu kuɗin da mai karɓa zai biya.'}
+                    {Number(selectedDelivery.codAmount || 0) > 0 ? (
+                      <span>Hada da kuɗin kaya CoD: ₦{Number(selectedDelivery.codAmount).toLocaleString()}</span>
+                    ) : selectedDelivery.paymentMode === 'pay_on_delivery' ? (
+                      'Mai karɓa zai biya tsabar kuɗin aikawa ga mai babur lokacin karɓa.'
+                    ) : (
+                      'An riga an biya kuɗin jigila; babu kuɗin da mai karɓa zai biya.'
+                    )}
                   </span>
                 </div>
                 <div className="text-right">
                   <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white font-mono">
-                    ₦{selectedDelivery.deliveryFee.toLocaleString()}
+                    ₦{(
+                      Number(selectedDelivery.codAmount || 0) + 
+                      (selectedDelivery.paymentMode === 'pay_on_delivery' ? Number(selectedDelivery.deliveryFee || 0) : 0)
+                    ).toLocaleString()}
                   </span>
                   <span className="text-[10px] text-slate-400 block">
-                    {selectedDelivery.paymentMode === 'pay_on_delivery' ? 'Pay on Handover' : 'Zero Cash Due'}
+                    {Number(selectedDelivery.codAmount || 0) > 0 ? 'Total Due on Handover' : selectedDelivery.paymentMode === 'pay_on_delivery' ? 'Pay on Handover' : 'Zero Cash Due'}
                   </span>
                 </div>
               </div>

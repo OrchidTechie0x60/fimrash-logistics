@@ -1,167 +1,147 @@
 import React, { useState } from 'react';
 import { Shield, Lock, Truck, Key, UserCheck, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { loginApi } from '../services/api';
 
 export default function AuthGate({ targetRole, onLoginSuccess, theme }) {
   const isRiderTarget = targetRole === 'rider';
 
-  const [identifier, setIdentifier] = useState(isRiderTarget ? 'RIDER-04' : 'ops@fimrash.com');
+  const [identifier, setIdentifier] = useState(isRiderTarget ? 'rider_04' : 'ops.kano@fimrash.com');
   const [pin, setPin] = useState('1234');
   const [showPin, setShowPin] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    if (isRiderTarget) {
-      if (pin === '1234' || pin.length === 4) {
-        onLoginSuccess({
-          role: 'rider',
-          id: 'rider_04',
-          name: 'Musa Garba',
-          bikeNumber: 'KN-942-TRN',
-          zone: 'Kano Central'
-        });
-      } else {
-        setError('Invalid Courier PIN. For demo access use: 1234');
-      }
+    const res = await loginApi({ identifier, pin, role: targetRole });
+    setLoading(false);
+
+    if (res.success && res.user) {
+      onLoginSuccess(res.user);
     } else {
-      // Operations Admin
-      if (pin === '1234' || pin.length >= 4) {
-        onLoginSuccess({
-          role: 'admin',
-          id: 'admin_ops',
-          name: 'Kano Station Dispatcher',
-          email: identifier,
-          clearance: 'Level-3 Financial Controller'
-        });
-      } else {
-        setError('Invalid Security Key. For demo access use: 1234');
-      }
+      setError(res.error || 'Invalid credentials. Default PIN: 1234');
     }
   };
 
-  const handleQuickDemo = (roleType) => {
-    if (roleType === 'rider') {
-      onLoginSuccess({
-        role: 'rider',
-        id: 'rider_04',
-        name: 'Musa Garba',
-        bikeNumber: 'KN-942-TRN',
-        zone: 'Kano Central'
-      });
+  const handleQuickDemo = async (roleType) => {
+    setLoading(true);
+    setError(null);
+
+    const res = await loginApi({
+      identifier: roleType === 'rider' ? 'rider_04' : 'ops.kano@fimrash.com',
+      pin: '1234',
+      role: roleType
+    });
+    setLoading(false);
+
+    if (res.success && res.user) {
+      onLoginSuccess(res.user);
     } else {
       onLoginSuccess({
-        role: 'admin',
-        id: 'admin_ops',
-        name: 'Kano Station Dispatcher',
-        email: 'ops.kano@fimrash.com',
-        clearance: 'Level-3 Financial Controller'
+        role: roleType,
+        id: roleType === 'rider' ? 'rider_04' : 'admin_ops',
+        name: roleType === 'rider' ? 'Musa Garba' : 'Kano Station Dispatcher',
+        phone: '08156661246',
+        bikeNumber: 'KN-942-TRN',
+        zone: 'Kano Central'
       });
     }
   };
 
   return (
-    <div className="max-w-md mx-auto py-6 sm:py-10 px-4">
-      <div className="glass-card rounded-2xl p-6 sm:p-7 shadow-sm relative overflow-hidden">
-        <div className="relative z-10">
-          {/* Header Icon */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-800 dark:text-slate-200">
-              {isRiderTarget ? <Truck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> : <Shield className="w-6 h-6 text-slate-700 dark:text-slate-300" />}
-            </div>
+    <div className="max-w-md mx-auto py-8 sm:py-12">
+      <div className="glass-card rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">
+        {/* Subtle accent glow */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="text-right">
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                {isRiderTarget ? 'Fleet Restricted' : 'Finance Clearance'}
-              </span>
-            </div>
+        <div className="text-center space-y-2 relative z-10">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            {isRiderTarget ? <Truck className="w-7 h-7" /> : <Shield className="w-7 h-7" />}
           </div>
 
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">
-            {isRiderTarget ? 'Courier Field Sign-In' : 'Station Operations Gate'}
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+            {isRiderTarget ? 'Courier Console Gateway' : 'Station Ledger Vault Gateway'}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-5">
-            {isRiderTarget 
-              ? 'Enter your Fimrash courier ID and 4-digit shift security PIN to access the Kano delivery queue.'
-              : 'Authorized personnel only. Access to cash custody vault and vendor bank settlements is audited.'}
-          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {isRiderTarget ? 'Rider / Courier ID' : 'Station Controller Email'}
-              </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {isRiderTarget 
+              ? 'Authorized Kano motorcycle fleet dispatch clearance required.'
+              : 'Station administrator & financial reconciliation clearance required.'}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
+              {isRiderTarget ? 'Courier ID or Phone Number' : 'Station Officer Email / Staff ID'}
+            </label>
+            <div className="relative">
               <input
-                type={isRiderTarget ? "text" : "email"}
+                type="text"
                 required
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder={isRiderTarget ? "e.g. RIDER-04" : "ops@fimrash.com"}
-                className="w-full rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-mono transition"
+                placeholder={isRiderTarget ? 'e.g. rider_04 or 08156661246' : 'e.g. ops.kano@fimrash.com'}
+                className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition"
               />
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {isRiderTarget ? '4-Digit Rider PIN' : 'Admin Security Key'}
-                </label>
-                <span className="text-[10px] text-slate-400">Demo PIN: 1234</span>
-              </div>
-              <div className="relative">
-                <input
-                  type={showPin ? "text" : "password"}
-                  required
-                  maxLength={isRiderTarget ? 4 : 32}
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="••••"
-                  className="w-full rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-mono tracking-widest transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPin(!showPin)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white"
-                >
-                  {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs p-2.5 rounded-lg flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <span>{isRiderTarget ? 'Authenticate Courier' : 'Unlock Operations Hub'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          {/* Quick Demo Access Buttons */}
-          <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-1.5">
-            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider text-center">
-              One-Tap Pilot Demo Login
-            </span>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo(targetRole)}
-              className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold py-2 px-3 rounded-xl transition flex items-center justify-center space-x-2 cursor-pointer border border-slate-200 dark:border-slate-700"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>
-                {isRiderTarget 
-                  ? 'Quick Sign-In as Musa Garba (Rider #04)' 
-                  : 'Quick Sign-In as Kano Station Controller'}
-              </span>
-            </button>
           </div>
+
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 block mb-1.5">
+              {isRiderTarget ? '4-Digit Fleet PIN' : 'Security Master Key'}
+            </label>
+            <div className="relative">
+              <input
+                type={showPin ? 'text' : 'password'}
+                required
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="••••"
+                className="w-full rounded-xl px-4 py-3 text-sm font-mono font-bold tracking-widest transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 rounded-xl text-xs text-red-700 dark:text-red-300 flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl text-xs sm:text-sm transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm disabled:opacity-50"
+          >
+            <span>{loading ? 'Authenticating with Whogohost...' : isRiderTarget ? 'Authenticate Courier' : 'Unlock Ledger Vault'}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </form>
+
+        {/* Quick Demo Credentials Access */}
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-800 text-center relative z-10">
+          <span className="text-[11px] text-slate-400 block mb-2 font-medium">
+            Demo Environment Access (PIN: 1234)
+          </span>
+          <button
+            type="button"
+            onClick={() => handleQuickDemo(targetRole)}
+            className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-bold"
+          >
+            Instant 1-Click Access as {isRiderTarget ? 'Musa Garba (Rider #04)' : 'Operations Admin'}
+          </button>
         </div>
       </div>
     </div>

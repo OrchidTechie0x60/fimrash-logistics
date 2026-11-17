@@ -5,7 +5,8 @@ import {
   MapPin, Navigation, Package, ShieldCheck, ArrowRight, 
   CheckCircle2, Copy, Phone, MessageSquare, Clock, Zap, Store,
   Compass, ChevronDown, ChevronUp, Home, Building2, AlertCircle,
-  Calculator, Search, Truck, ExternalLink, Shield, Sparkles, RefreshCw
+  Calculator, Search, Truck, ExternalLink, Shield, Sparkles, RefreshCw,
+  Printer, QrCode, Banknote
 } from 'lucide-react';
 
 export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavigateToTracking }) {
@@ -29,7 +30,12 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
     isFragile: true,
     deliveryNote: '',
     paymentMode: 'pay_on_delivery', // 'pay_on_delivery' or 'prepaid'
+    isCodActive: false, // Optional Merchant Cash-on-Delivery
+    codAmount: '',
   });
+
+  // Radar Map Target Selector: 'pickup' or 'dropoff'
+  const [mapTarget, setMapTarget] = useState('dropoff');
 
   // Fare Calculator Dedicated State
   const [calcState, setCalcState] = useState({
@@ -46,6 +52,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
   const [showMap, setShowMap] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedSenderLandmark = KANO_LANDMARKS.find(l => l.id === formData.senderLandmark) || KANO_LANDMARKS[5];
   const selectedRecipientLandmark = KANO_LANDMARKS.find(l => l.id === formData.recipientLandmark) || KANO_LANDMARKS[8];
@@ -56,8 +63,6 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
   // Dedicated Calculator Metrics
   const calcFare = calculateDeliveryFare(calcState.pickup, calcState.dropoff);
   const calcMetrics = calculateRouteMetrics(calcState.pickup, calcState.dropoff);
-  const calcPickupObj = KANO_LANDMARKS.find(l => l.id === calcState.pickup) || KANO_LANDMARKS[0];
-  const calcDropoffObj = KANO_LANDMARKS.find(l => l.id === calcState.dropoff) || KANO_LANDMARKS[1];
 
   // Categories for Kano: Home Businesses, Markets & Personal Errands
   const CATEGORIES = [
@@ -86,6 +91,15 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
       recipientLandmark: preset.to,
       itemCategory: preset.category || prev.itemCategory,
     }));
+  };
+
+  // Interactive Map Click Handler
+  const handleMapLandmarkSelect = (landmarkId) => {
+    if (mapTarget === 'pickup') {
+      setFormData(prev => ({ ...prev, senderLandmark: landmarkId }));
+    } else {
+      setFormData(prev => ({ ...prev, recipientLandmark: landmarkId }));
+    }
   };
 
   // Quick Tracker Search
@@ -117,12 +131,14 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
     setHeroTab('ship');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const trackingCode = `FMR-KN-${randomSuffix}`;
     const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const codVal = formData.isCodActive ? Math.max(0, parseFloat(formData.codAmount || 0)) : 0;
 
     const newDelivery = {
       id: 'del_' + Date.now(),
@@ -143,6 +159,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
       itemDescription: formData.itemDescription || 'Home Baked Goods / Parcel',
       isFragile: formData.isFragile,
       deliveryNote: formData.deliveryNote,
+      codAmount: codVal,
       deliveryFee,
       paymentMode: formData.paymentMode,
       feeCollected: false,
@@ -154,8 +171,10 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
       createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    onDeliveryCreated(newDelivery);
-    setBookingSuccess(newDelivery);
+    // Await server sync to ensure canonical ID & OTP are unified
+    const confirmed = await onDeliveryCreated(newDelivery);
+    setIsSubmitting(false);
+    setBookingSuccess(confirmed || newDelivery);
   };
 
   const copyToClipboard = (text) => {
@@ -164,22 +183,44 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  // SUCCESS WAYBILL PASS
+  const handlePrintWaybill = () => {
+    window.print();
+  };
+
+  // SUCCESS WAYBILL PASS (Thermal Receipt & QR Code Handshake)
   if (bookingSuccess) {
+    const isCod = Number(bookingSuccess.codAmount || 0) > 0;
+    const itemCost = Number(bookingSuccess.codAmount || 0);
+    const fee = Number(bookingSuccess.deliveryFee || 0);
+    const totalToCollect = bookingSuccess.paymentMode === 'pay_on_delivery' ? (itemCost + fee) : itemCost;
+
     return (
-      <div className="max-w-2xl mx-auto py-6 sm:py-10">
-        <div className="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800">
+      <div className="max-w-2xl mx-auto py-6 sm:py-10 print:py-0 print:m-0 print:max-w-full">
+        <div className="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 print:shadow-none print:border-none print:p-2">
+          {/* Top Brand Banner for Print */}
+          <div className="text-center pb-4 mb-4 border-b border-dashed border-slate-300 dark:border-slate-700">
+            <span className="text-xs font-mono font-bold tracking-widest text-emerald-600 uppercase">
+              FIMRASH LOGISTICS SERVICES • KANO METROPOLIS
+            </span>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mt-0.5">
+              Consignment Dispatch Pass
+            </h1>
+            <p className="text-[11px] text-slate-500">
+              Kano Intra-State Same-Day Express Network • Dispatch Desk: 0815 666 1246
+            </p>
+          </div>
+
           {/* Header */}
           <div className="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center space-x-3">
-              <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 print:hidden">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
                 <span className="text-xs font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wider">
-                  Dispatch Confirmed
+                  Waybill Logged
                 </span>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Waybill Generated</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Confirmed Dispatch</h2>
               </div>
             </div>
 
@@ -189,35 +230,69 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                 <span>{bookingSuccess.trackingCode}</span>
                 <button
                   onClick={() => copyToClipboard(bookingSuccess.trackingCode)}
-                  className="text-slate-400 hover:text-emerald-600 transition"
+                  className="text-slate-400 hover:text-emerald-600 transition print:hidden"
                   title="Copy"
                 >
                   <Copy className="w-4 h-4" />
                 </button>
               </div>
-              {copiedCode && <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block">Copied!</span>}
+              {copiedCode && <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block print:hidden">Copied!</span>}
             </div>
           </div>
 
-          {/* 4-Digit Recipient Handshake OTP */}
-          <div className="my-6 p-5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2 text-amber-800 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
+          {/* 4-Digit Recipient Handshake OTP & Scannable QR Code */}
+          <div className="my-6 p-5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center sm:text-left">
+              <div className="flex items-center justify-center sm:justify-start space-x-2 text-amber-800 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-4 h-4" />
                 <span>Recipient 4-Digit Handshake OTP</span>
               </div>
-              <span className="text-[11px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-semibold px-2.5 py-0.5 rounded">
-                Recipient Private Pass
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-sm">
-                Recipient gives this 4-digit secret code to the courier <span className="font-semibold underline">only after receiving the item</span>.
+                Recipient presents this 4-digit secret code to the courier <span className="font-semibold underline">only after inspecting and receiving the parcel</span>.
               </p>
-              <div className="text-3xl font-mono font-bold text-amber-900 dark:text-amber-400 tracking-widest bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-amber-300 dark:border-amber-700/50 shadow-sm text-center">
+              <div className="text-3xl font-mono font-bold text-amber-900 dark:text-amber-400 tracking-widest bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-amber-300 dark:border-amber-700/50 shadow-sm text-center inline-block mt-2">
                 {bookingSuccess.otpCode}
               </div>
+            </div>
+
+            {/* Scannable Optical Handshake Pass (SVG QR Code) */}
+            <div className="flex flex-col items-center p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <svg width="90" height="90" viewBox="0 0 100 100" className="text-slate-900 dark:text-white fill-current">
+                {/* Position Marker TL */}
+                <rect x="5" y="5" width="28" height="28" fill="currentColor" rx="2" />
+                <rect x="9" y="9" width="20" height="20" fill="var(--bg-card, #fff)" rx="1" />
+                <rect x="13" y="13" width="12" height="12" fill="currentColor" rx="1" />
+                {/* Position Marker TR */}
+                <rect x="67" y="5" width="28" height="28" fill="currentColor" rx="2" />
+                <rect x="71" y="9" width="20" height="20" fill="var(--bg-card, #fff)" rx="1" />
+                <rect x="75" y="13" width="12" height="12" fill="currentColor" rx="1" />
+                {/* Position Marker BL */}
+                <rect x="5" y="67" width="28" height="28" fill="currentColor" rx="2" />
+                <rect x="9" y="71" width="20" height="20" fill="var(--bg-card, #fff)" rx="1" />
+                <rect x="13" y="75" width="12" height="12" fill="currentColor" rx="1" />
+                {/* Optical Data Grid Matrix */}
+                <rect x="38" y="10" width="6" height="6" fill="currentColor" />
+                <rect x="50" y="10" width="6" height="6" fill="currentColor" />
+                <rect x="42" y="22" width="6" height="6" fill="currentColor" />
+                <rect x="54" y="22" width="6" height="6" fill="currentColor" />
+                <rect x="10" y="42" width="6" height="6" fill="currentColor" />
+                <rect x="22" y="42" width="6" height="6" fill="currentColor" />
+                <rect x="34" y="42" width="6" height="6" fill="currentColor" />
+                <rect x="46" y="42" width="8" height="8" fill="#059669" />
+                <rect x="58" y="42" width="6" height="6" fill="currentColor" />
+                <rect x="70" y="42" width="6" height="6" fill="currentColor" />
+                <rect x="82" y="42" width="6" height="6" fill="currentColor" />
+                <rect x="40" y="58" width="6" height="6" fill="currentColor" />
+                <rect x="52" y="58" width="6" height="6" fill="currentColor" />
+                <rect x="40" y="70" width="6" height="6" fill="currentColor" />
+                <rect x="52" y="70" width="6" height="6" fill="currentColor" />
+                <rect x="70" y="70" width="6" height="6" fill="currentColor" />
+                <rect x="82" y="70" width="6" height="6" fill="currentColor" />
+                <rect x="76" y="82" width="6" height="6" fill="currentColor" />
+              </svg>
+              <span className="text-[9px] font-mono font-bold text-slate-500 uppercase mt-1">
+                Scan Handshake Pass
+              </span>
             </div>
           </div>
 
@@ -227,18 +302,18 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Pickup Location</span>
                 <span className="font-bold text-slate-900 dark:text-white">
-                  {bookingSuccess.senderLandmark.name}
+                  {bookingSuccess.senderLandmark?.name || 'Kano Origin'}
                 </span>
                 <span className="text-slate-500 block text-xs">{bookingSuccess.senderDetail}</span>
-                <span className="text-slate-400 block text-[11px] mt-0.5">Sender: {bookingSuccess.senderName}</span>
+                <span className="text-slate-400 block text-[11px] mt-0.5">Sender: {bookingSuccess.senderName} ({bookingSuccess.senderPhone})</span>
               </div>
               <div className="text-right">
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Delivery Location</span>
                 <span className="font-bold text-slate-900 dark:text-white">
-                  {bookingSuccess.recipientLandmark.name}
+                  {bookingSuccess.recipientLandmark?.name || 'Kano Destination'}
                 </span>
                 <span className="text-slate-500 block text-xs">{bookingSuccess.recipientDetail}</span>
-                <span className="text-slate-400 block text-[11px] mt-0.5">Recipient: {bookingSuccess.recipientName}</span>
+                <span className="text-slate-400 block text-[11px] mt-0.5">Recipient: {bookingSuccess.recipientName} ({bookingSuccess.recipientPhone})</span>
               </div>
             </div>
 
@@ -248,7 +323,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                   {bookingSuccess.itemDescription} ({bookingSuccess.itemCategory})
                 </span>
                 <span className="text-xs text-slate-500">
-                  {bookingSuccess.paymentMode === 'pay_on_delivery' ? '💵 Courier collects fee from recipient on arrival' : '✅ Fee prepaid by sender'}
+                  {bookingSuccess.paymentMode === 'pay_on_delivery' ? '💵 Courier collects delivery fee from recipient on arrival' : '✅ Delivery fee prepaid by sender'}
                 </span>
                 {bookingSuccess.isFragile && (
                   <span className="inline-block mt-1 text-[11px] text-amber-700 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/40">
@@ -256,20 +331,37 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                   </span>
                 )}
               </div>
-              <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Delivery Fee</span>
-                <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                  ₦{bookingSuccess.deliveryFee.toLocaleString()}
-                </span>
+
+              {/* Financial Summary */}
+              <div className="text-right space-y-0.5">
+                {isCod && (
+                  <div className="text-xs text-slate-500">
+                    Item CoD: <strong className="text-slate-800 dark:text-slate-200 font-mono">₦{itemCost.toLocaleString()}</strong>
+                  </div>
+                )}
+                <div className="text-xs text-slate-500">
+                  Delivery Fee: <strong className="text-slate-800 dark:text-slate-200 font-mono">₦{fee.toLocaleString()}</strong>
+                </div>
+                <div className="text-base sm:text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 pt-0.5">
+                  Total Cash on Arrival: ₦{totalToCollect.toLocaleString()}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 print:hidden">
+            <button
+              onClick={handlePrintWaybill}
+              className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold py-3.5 px-5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center space-x-2 cursor-pointer border border-slate-700 shadow-sm"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print Waybill Pass / Save PDF</span>
+            </button>
+
             <button
               onClick={() => {
-                const text = `*FIMRASH DISPATCH DISPATCH PASS*\nWaybill: ${bookingSuccess.trackingCode}\nFrom: ${bookingSuccess.senderLandmark.name} (${bookingSuccess.senderName})\nTo: ${bookingSuccess.recipientLandmark.name} (${bookingSuccess.recipientName})\nFee: ₦${bookingSuccess.deliveryFee.toLocaleString()} (${bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery' : 'Prepaid'})\nRecipient OTP: ${bookingSuccess.otpCode}`;
+                const text = `*FIMRASH LOGISTICS DISPATCH PASS*\nWaybill: ${bookingSuccess.trackingCode}\nFrom: ${bookingSuccess.senderLandmark?.name} (${bookingSuccess.senderName})\nTo: ${bookingSuccess.recipientLandmark?.name} (${bookingSuccess.recipientName})\nTotal Due: ₦${totalToCollect.toLocaleString()} (${bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery' : 'Prepaid Fee'}${isCod ? ' + CoD Item' : ''})\nRecipient Handshake OTP: ${bookingSuccess.otpCode}`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
               }}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl text-center text-xs sm:text-sm transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm"
@@ -280,7 +372,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
 
             <button
               onClick={() => setBookingSuccess(null)}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3.5 px-6 rounded-xl text-center text-xs sm:text-sm transition cursor-pointer border border-slate-200 dark:border-slate-700"
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-3.5 px-5 rounded-xl text-center text-xs sm:text-sm transition cursor-pointer border border-slate-200 dark:border-slate-700"
             >
               Book Another Dispatch
             </button>
@@ -297,7 +389,6 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
           Floating multi-tab action center: [ Ship Now | Track Waybill | Rate Calculator ]
          ========================================================================= */}
       <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-gradient-to-b from-white via-slate-50/50 to-white dark:from-slate-900/90 dark:via-slate-900/40 dark:to-slate-900/90 shadow-xl shadow-black/5 dark:shadow-2xl dark:shadow-black/40 p-5 sm:p-8">
-        {/* Subtle Ambient Glow */}
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-emerald-600/5 rounded-full blur-2xl pointer-events-none" />
 
@@ -555,12 +646,12 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                 >
                   <optgroup label="Residential & Home Enterprise">
                     {KANO_LANDMARKS.filter(l => l.type === 'residential').map((l) => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
+                      <option key={l.id} value={l.id}>{l.name} ({l.hausaName})</option>
                     ))}
                   </optgroup>
                   <optgroup label="Markets & Commercial Plazas">
                     {KANO_LANDMARKS.filter(l => l.type !== 'residential').map((l) => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
+                      <option key={l.id} value={l.id}>{l.name} ({l.hausaName})</option>
                     ))}
                   </optgroup>
                 </select>
@@ -577,12 +668,12 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                 >
                   <optgroup label="Residential, GRAs & Campuses">
                     {KANO_LANDMARKS.filter(l => l.type === 'residential' || l.type === 'campus').map((l) => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
+                      <option key={l.id} value={l.id}>{l.name} ({l.hausaName})</option>
                     ))}
                   </optgroup>
                   <optgroup label="Markets & Commercial Hubs">
                     {KANO_LANDMARKS.filter(l => l.type !== 'residential' && l.type !== 'campus').map((l) => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
+                      <option key={l.id} value={l.id}>{l.name} ({l.hausaName})</option>
                     ))}
                   </optgroup>
                 </select>
@@ -671,28 +762,55 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
               ))}
             </div>
 
-            {/* Corridor Radar Accordion */}
+            {/* Corridor Radar Accordion with Interactive Map Click-to-Select */}
             <div>
-              <button
-                type="button"
-                onClick={() => setShowMap(!showMap)}
-                className="w-full glass-card rounded-xl p-3 flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
-              >
-                <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setShowMap(!showMap)}
+                  className="glass-card rounded-xl px-3.5 py-2 flex items-center space-x-2 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+                >
                   <Compass className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Kano Corridor Radar: {selectedSenderLandmark.name.split(' ')[0]} → {selectedRecipientLandmark.name.split(' ')[0]} ({routeMetrics.distanceKm} km • ~{routeMetrics.estMinutes} mins)</span>
-                </div>
-                <div className="flex items-center space-x-1 text-slate-400 text-xs">
-                  <span>{showMap ? 'Hide Radar Map' : 'View Corridor Map'}</span>
-                  {showMap ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </div>
-              </button>
+                  {showMap ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+                </button>
+
+                {/* Map Node Click Target Selector */}
+                {showMap && (
+                  <div className="flex items-center space-x-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 px-1.5">Tap Map Node to set:</span>
+                    <button
+                      type="button"
+                      onClick={() => setMapTarget('pickup')}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition ${
+                        mapTarget === 'pickup'
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      Pickup (Origin)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMapTarget('dropoff')}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition ${
+                        mapTarget === 'dropoff'
+                          ? 'bg-sky-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      Drop-off (Destination)
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {showMap && (
-                <div className="mt-3 transition-all">
+                <div className="mt-2 transition-all">
                   <KanoRouteMap
                     pickupLandmark={selectedSenderLandmark}
                     dropoffLandmark={selectedRecipientLandmark}
+                    onSelectLandmark={handleMapLandmarkSelect}
                   />
                 </div>
               )}
@@ -779,12 +897,12 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                     >
                       <optgroup label="Residential & Home Enterprise Hubs">
                         {KANO_LANDMARKS.filter(l => l.type === 'residential').map((l) => (
-                          <option key={l.id} value={l.id}>{l.name}</option>
+                          <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
                         ))}
                       </optgroup>
                       <optgroup label="Commercial Markets & Tech Plazas">
                         {KANO_LANDMARKS.filter(l => l.type !== 'residential').map((l) => (
-                          <option key={l.id} value={l.id}>{l.name}</option>
+                          <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
                         ))}
                       </optgroup>
                     </select>
@@ -802,6 +920,26 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                       onChange={(e) => setFormData({ ...formData, senderDetail: e.target.value })}
                       className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
                     />
+
+                    {/* Smart Sub-Landmark Popular Anchor Quick-Chips */}
+                    {selectedSenderLandmark?.popularAnchors?.length > 0 && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-400">Anchor:</span>
+                        {selectedSenderLandmark.popularAnchors.map((anchor, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              senderDetail: prev.senderDetail ? `${prev.senderDetail}, ${anchor}` : anchor
+                            }))}
+                            className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/50 text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                          >
+                            + {anchor}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -885,12 +1023,12 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                     >
                       <optgroup label="Residential Areas, GRAs & Campuses">
                         {KANO_LANDMARKS.filter(l => l.type === 'residential' || l.type === 'campus').map((l) => (
-                          <option key={l.id} value={l.id}>{l.name}</option>
+                          <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
                         ))}
                       </optgroup>
                       <optgroup label="Markets & Commercial Plazas">
                         {KANO_LANDMARKS.filter(l => l.type !== 'residential' && l.type !== 'campus').map((l) => (
-                          <option key={l.id} value={l.id}>{l.name}</option>
+                          <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
                         ))}
                       </optgroup>
                     </select>
@@ -908,6 +1046,26 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                       onChange={(e) => setFormData({ ...formData, recipientDetail: e.target.value })}
                       className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
                     />
+
+                    {/* Smart Sub-Landmark Popular Anchor Quick-Chips */}
+                    {selectedRecipientLandmark?.popularAnchors?.length > 0 && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-400">Anchor:</span>
+                        {selectedRecipientLandmark.popularAnchors.map((anchor, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              recipientDetail: prev.recipientDetail ? `${prev.recipientDetail}, ${anchor}` : anchor
+                            }))}
+                            className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-emerald-950/50 text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                          >
+                            + {anchor}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1012,10 +1170,71 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                   </label>
                 </div>
 
-                {/* Payment Method Selection */}
+                {/* Real Merchant Cash-on-Delivery (CoD Item Value Split) */}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2.5">
+                      <Banknote className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      <div>
+                        <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block">
+                          Collect Item Price for Vendor (Cash-on-Delivery / CoD)
+                        </span>
+                        <span className="text-[11px] text-slate-500 block">
+                          Rider collects the cost of the goods (e.g. cake, fabrics) from buyer and reconciles it back to you.
+                        </span>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.isCodActive}
+                        onChange={(e) => setFormData({ ...formData, isCodActive: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+                    </label>
+                  </div>
+
+                  {formData.isCodActive && (
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                        Goods / Item Price to Collect from Buyer (₦) *
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-3 text-sm font-bold text-slate-400">₦</span>
+                        <input
+                          type="number"
+                          min="100"
+                          step="100"
+                          placeholder="e.g. 15000 (Cake or Shadda Lace price)"
+                          value={formData.codAmount}
+                          onChange={(e) => setFormData({ ...formData, codAmount: e.target.value })}
+                          className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm sm:text-base font-mono font-bold transition"
+                        />
+                      </div>
+
+                      <div className="p-3 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-xs space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">Item Cost (Due to Vendor):</span>
+                          <span className="font-mono font-bold text-slate-900 dark:text-white">₦{parseFloat(formData.codAmount || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">Intra-Kano Delivery Fee:</span>
+                          <span className="font-mono font-bold text-slate-900 dark:text-white">₦{deliveryFee.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between pt-1 border-t border-emerald-200 dark:border-emerald-800/50 font-bold text-emerald-800 dark:text-emerald-300">
+                          <span>Total Cash Rider Collects on Handover:</span>
+                          <span className="font-mono text-sm">₦{(parseFloat(formData.codAmount || 0) + (formData.paymentMode === 'pay_on_delivery' ? deliveryFee : 0)).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Delivery Fee Payment Method Selection */}
                 <div className="pt-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                    How Will the Delivery Fee Be Settled?
+                    How Will the Courier Delivery Fee Be Settled?
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label 
@@ -1063,7 +1282,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                           Sender Prepaids Fee
                         </span>
                         <span className="text-xs text-slate-500 block mt-0.5">
-                          Sender pays the ₦{deliveryFee.toLocaleString()} fee upfront; zero cash collected from recipient.
+                          Sender pays the ₦{deliveryFee.toLocaleString()} fee upfront; zero cash collected for courier fee.
                         </span>
                       </div>
                     </label>
@@ -1092,6 +1311,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
                   </span>
                   <span className="text-sm font-bold text-slate-900 dark:text-white block mt-1">
                     {formData.paymentMode === 'pay_on_delivery' ? '💵 Pay on Delivery' : '✅ Prepaid by Sender'}
+                    {formData.isCodActive && ` (+ ₦${parseFloat(formData.codAmount || 0).toLocaleString()} CoD)`}
                   </span>
                 </div>
               </div>
@@ -1099,9 +1319,10 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
               {/* Big Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-xl text-center text-sm sm:text-base shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer"
+                disabled={isSubmitting}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold py-4 px-6 rounded-xl text-center text-sm sm:text-base shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer"
               >
-                <span>Dispatch Fimrash Express Courier</span>
+                <span>{isSubmitting ? 'Securing Kano Courier Match...' : 'Dispatch Fimrash Express Courier'}</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
             </form>
@@ -1182,7 +1403,7 @@ export default function BookingForm({ onDeliveryCreated, deliveries = [], onNavi
       {/* =========================================================================
           GIGL-STYLE CUSTOMER DESK & CORRIDOR DIRECTORY BAR
          ========================================================================= */}
-      <section className="glass-card rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <section className="glass-card rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 print:hidden">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
             <Phone className="w-5 h-5" />

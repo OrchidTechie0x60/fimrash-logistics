@@ -5,6 +5,22 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '
 
 export const isBackendConnected = () => Boolean(API_BASE_URL);
 
+// Token helpers
+export const getStoredToken = () => localStorage.getItem('fimrash_token') || null;
+export const setStoredToken = (token) => {
+  if (token) localStorage.setItem('fimrash_token', token);
+  else localStorage.removeItem('fimrash_token');
+};
+
+const getAuthHeaders = () => {
+  const token = getStoredToken();
+  const headers = { 'Accept': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 /**
  * Check health of the Whogohost backend
  */
@@ -14,13 +30,64 @@ export async function checkBackendHealth() {
   try {
     const res = await fetch(`${API_BASE_URL}/api/health`, {
       method: 'GET',
-      headers: { 'Accept': 'application/json' },
+      headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return { connected: true, data };
   } catch (err) {
     return { connected: false, error: err.message };
+  }
+}
+
+/**
+ * Authentication Login API (Rider & Admin)
+ */
+export async function loginApi({ identifier, pin, role }) {
+  if (!API_BASE_URL) {
+    // Offline local simulation
+    if (role === 'rider') {
+      const user = {
+        role: 'rider',
+        id: 'rider_04',
+        name: 'Musa Garba',
+        phone: '08156661246',
+        bikeNumber: 'KN-942-TRN',
+        zone: 'Kano Central'
+      };
+      return { success: true, user, token: 'offline_token_rider_04' };
+    } else {
+      const user = {
+        role: 'admin',
+        id: 'admin_ops',
+        name: 'Kano Station Dispatcher',
+        email: identifier,
+        clearance: 'Level-3 Financial Controller'
+      };
+      return { success: true, user, token: 'offline_token_admin' };
+    }
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ identifier, pin, role })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    
+    if (json.token) {
+      setStoredToken(json.token);
+    }
+    return { success: true, user: json.user, token: json.token };
+  } catch (err) {
+    console.warn('[Fimrash API] Backend login failed, evaluating fallback:', err.message);
+    return { success: false, error: err.message };
   }
 }
 
@@ -32,7 +99,7 @@ export async function getDeliveriesApi(fallbackDeliveries = []) {
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/deliveries`, {
-      headers: { 'Accept': 'application/json' }
+      headers: getAuthHeaders()
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
@@ -45,12 +112,16 @@ export async function getDeliveriesApi(fallbackDeliveries = []) {
 
 /**
  * Create a new consignment on Whogohost backend
+ * Passes client-generated ID, tracking code, and OTP code to prevent desynchronization
  */
 export async function createDeliveryApi(delivery) {
   if (!API_BASE_URL) return { success: true, delivery, isFallback: true };
 
   try {
     const payload = {
+      id: delivery.id,
+      tracking_code: delivery.trackingCode,
+      otp_code: delivery.otpCode,
       sender_type: delivery.senderType || 'home',
       sender_name: delivery.senderName,
       sender_phone: delivery.senderPhone,
@@ -66,6 +137,7 @@ export async function createDeliveryApi(delivery) {
       is_fragile: delivery.isFragile ? 1 : 0,
       special_instructions: delivery.deliveryNote || '',
       payment_mode: delivery.paymentMode || 'pay_on_delivery',
+      cod_amount: delivery.codAmount || 0,
       delivery_fee: delivery.deliveryFee || 1000
     };
 
@@ -73,7 +145,7 @@ export async function createDeliveryApi(delivery) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        ...getAuthHeaders()
       },
       body: JSON.stringify(payload)
     });
@@ -82,12 +154,33 @@ export async function createDeliveryApi(delivery) {
     const json = await res.json();
     return { 
       success: true, 
-      delivery: { ...delivery, ...json.delivery }, 
+      delivery: { 
+        ...delivery, 
+        ...json.delivery,
+        assignedRider: json.delivery?.assigned_rider || delivery.assignedRider 
+      }, 
       isFallback: false 
     };
   } catch (err) {
     console.warn('[Fimrash API] Whogohost create delivery failed, saving locally:', err.message);
     return { success: true, delivery, isFallback: true, error: err.message };
+  }
+}
+
+/**
+ * Track single delivery with optional phone verification for unmasking OTP
+ */
+export async function trackDeliveryApi(code, phoneLast4 = '') {
+  if (!API_BASE_URL) return { success: false, isFallback: true };
+
+  try {
+    const url = `${API_BASE_URL}/api/deliveries/${encodeURIComponent(code)}${phoneLast4 ? `?phone_last4=${phoneLast4}` : ''}`;
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    return { success: true, data: json.data, isFallback: false };
+  } catch (err) {
+    return { success: false, error: err.message, isFallback: true };
   }
 }
 
@@ -100,7 +193,10 @@ export async function updateDeliveryStatusApi(deliveryId, newStatus) {
   try {
     const res = await fetch(`${API_BASE_URL}/api/deliveries/${deliveryId}/status`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeaders() 
+      },
       body: JSON.stringify({ status: newStatus })
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -120,7 +216,10 @@ export async function verifyOtpApi(deliveryId, otpCode) {
   try {
     const res = await fetch(`${API_BASE_URL}/api/deliveries/${deliveryId}/verify-otp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeaders() 
+      },
       body: JSON.stringify({ otp_code: otpCode })
     });
 
@@ -142,7 +241,10 @@ export async function remitRiderCashApi() {
   try {
     const res = await fetch(`${API_BASE_URL}/api/remit-cash`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        ...getAuthHeaders() 
+      }
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return { success: true, isFallback: false };
@@ -150,4 +252,3 @@ export async function remitRiderCashApi() {
     return { success: true, isFallback: true };
   }
 }
-

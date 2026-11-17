@@ -33,6 +33,7 @@ class Database {
                         PDO::ATTR_EMULATE_PREPARES => false,
                         PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
                     ]);
+                    self::ensureTablesAndSeed(self::$instance, 'mysql');
                 } else {
                     // SQLite storage for zero-config local testing
                     $dbPath = __DIR__ . '/../storage/fimrash.sqlite';
@@ -47,9 +48,7 @@ class Database {
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     ]);
 
-                    if ($isNew) {
-                        self::initializeSchema(self::$instance);
-                    }
+                    self::ensureTablesAndSeed(self::$instance, 'sqlite');
                 }
             } catch (PDOException $e) {
                 http_response_code(500);
@@ -66,11 +65,28 @@ class Database {
         return self::$instance;
     }
 
-    private static function initializeSchema(PDO $db): void {
+    private static function ensureTablesAndSeed(PDO $db, string $driver): void {
         $schemaFile = __DIR__ . '/../schema.sql';
         if (file_exists($schemaFile)) {
             $sql = file_get_contents($schemaFile);
-            $db->exec($sql);
+            if ($driver === 'mysql') {
+                $sql = str_replace('INSERT OR IGNORE', 'INSERT IGNORE', $sql);
+            }
+            try {
+                $db->exec($sql);
+            } catch (\Exception $e) {
+                // If multi-statement exec is restricted, run statement by statement
+                $statements = array_filter(array_map('trim', explode(';', $sql)));
+                foreach ($statements as $stmt) {
+                    if (!empty($stmt)) {
+                        try {
+                            $db->exec($stmt);
+                        } catch (\Exception $inner) {
+                            // Table might already exist
+                        }
+                    }
+                }
+            }
         }
     }
 }

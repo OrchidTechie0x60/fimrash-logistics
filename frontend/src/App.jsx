@@ -220,9 +220,20 @@ export default function App() {
 
   // Handlers with Whogohost API sync
   const handleDeliveryCreated = async (newDelivery) => {
-    setDeliveries(prev => [newDelivery, ...prev]);
-    setActiveTrackingCode(newDelivery.trackingCode);
-    await createDeliveryApi(newDelivery);
+    const res = await createDeliveryApi(newDelivery);
+    const confirmed = (res && res.delivery) ? {
+      ...newDelivery,
+      ...res.delivery,
+      assignedRider: res.delivery.assigned_rider ? {
+        name: res.delivery.assigned_rider.name,
+        phone: res.delivery.assigned_rider.phone,
+        bikeNumber: res.delivery.assigned_rider.bikeNumber || res.delivery.assigned_rider.bike_number
+      } : newDelivery.assignedRider
+    } : newDelivery;
+
+    setDeliveries(prev => [confirmed, ...prev]);
+    setActiveTrackingCode(confirmed.trackingCode);
+    return confirmed;
   };
 
   const handleUpdateDeliveryStatus = async (deliveryId, newStatus) => {
@@ -300,11 +311,12 @@ export default function App() {
             />
           )}
 
-          {/* Tab 2: Live Tracking (Public) */}
+          {/* Tab 2: Live Tracking (Public with Handshake OTP Shield) */}
           {activeTab === 'tracking' && (
             <LiveTracking
               deliveries={deliveries}
               activeTrackingCode={activeTrackingCode}
+              currentUser={currentUser}
             />
           )}
 

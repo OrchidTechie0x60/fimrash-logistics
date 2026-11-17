@@ -15,22 +15,10 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    allowedHosts: [
-      'sb-xyfuax29p9rv.vercel.run',
-      '.vercel.run',
-      '.vercel.app',
-      'localhost',
-      '127.0.0.1',
-    ],
+    allowedHosts: true,
   },
   preview: {
     host: true,
-    allowedHosts: [
-      'sb-xyfuax29p9rv.vercel.run',
-      '.vercel.run',
-      '.vercel.app',
-      'localhost',
-      '127.0.0.1',
-    ],
+    allowedHosts: true,
   }
 })
