@@ -37,7 +37,7 @@
   -webkit-font-smoothing: antialiased;
 }
 .iw ::selection { background: var(--iw-turmeric); color: var(--iw-pit); }
-.iw :focus-visible { outline: 3px solid var(--iw-turmeric); outline-offset: 3px; border-radius: 6px; }
+.iw :focus-visible { outline: 3px solid var(--iw-turmeric); outline-offset: 3px; border-radius: 0.5rem; }
 
 .iw-cloth {
   background-color: var(--iw-indigo);

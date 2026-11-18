@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font-size",
+        "value": "11px",
+        "files": [
+          "frontend/src/components/ReconciliationHub.jsx"
+        ],
+        "createdAt": "2026-11-18T05:37:52.722Z",
+        "reason": "Claude: internal /ops console is documented in DESIGN.md as outside the public design system; its dense table labels use legacy 10-11px sizes"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "10px",
+        "files": [
+          "frontend/src/components/ReconciliationHub.jsx"
+        ],
+        "createdAt": "2026-11-18T05:37:53.172Z",
+        "reason": "Claude: internal /ops console is documented in DESIGN.md as outside the public design system; its dense table labels use legacy 10-11px sizes"
+      }
+    ]
+  }
+}
