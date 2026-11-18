@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-18T00:00:00Z",
+  "title": "Design System: Fimrash Logistics Services",
+  "extensions": {
+    "scope": "Public world only (homepage, public header/footer/dock, indigo re-dye of /send and /track). Internal /rider and /ops consoles keep the older slate/emerald operational look and are outside this system.",
+    "colorMeta": {
+      "pit": { "role": "primary", "displayName": "Dye-Pit Black", "canonical": "#0b1240", "tonalRamp": ["#0b1240", "#0e1745", "#14215c", "#1b2e7a", "#2c47a8", "#5f7bd0", "#b9c6ee", "#eef1fb"] },
+      "indigo": { "role": "primary", "displayName": "Kofar Mata Indigo", "canonical": "#14215c", "tonalRamp": ["#0b1240", "#0e1745", "#14215c", "#1b2e7a", "#23399a", "#2c47a8", "#8fa8e8", "#dce3f7"] },
+      "indigo-dip": { "role": "primary", "displayName": "Lighter Dip", "canonical": "#1b2e7a", "tonalRamp": ["#0b1240", "#14215c", "#1b2e7a", "#23399a", "#2c47a8", "#5f7bd0", "#b9c6ee", "#eef1fb"] },
+      "indigo-first-dip": { "role": "primary", "displayName": "First Dip", "canonical": "#2c47a8", "tonalRamp": ["#0e1745", "#1b2e7a", "#23399a", "#2c47a8", "#5f7bd0", "#8fa8e8", "#b9c6ee", "#eef1fb"] },
+      "wash": { "role": "neutral", "displayName": "Wash", "canonical": "#8fa8e8", "tonalRamp": ["#1b2e7a", "#2c47a8", "#5f7bd0", "#8fa8e8", "#b9c6ee", "#c9d3f2", "#dce3f7", "#eef1fb"] },
+      "mist": { "role": "neutral", "displayName": "Mist", "canonical": "#c9d3f2", "tonalRamp": ["#2c47a8", "#5f7bd0", "#8fa8e8", "#b9c6ee", "#c9d3f2", "#dce3f7", "#eef1fb", "#f7f9fe"] },
+      "cotton": { "role": "neutral", "displayName": "Undyed Cotton", "canonical": "#f1eadb", "tonalRamp": ["#4a4232", "#7a6f58", "#b9ad92", "#d6caaf", "#e6dcc6", "#f1eadb", "#faf6ee", "#fffaf0"] },
+      "cotton-shade": { "role": "neutral", "displayName": "Cotton in Shade", "canonical": "#e6dcc6", "tonalRamp": ["#4a4232", "#7a6f58", "#a39779", "#b9ad92", "#d6caaf", "#e6dcc6", "#f1eadb", "#faf6ee"] },
+      "cotton-bright": { "role": "neutral", "displayName": "Bright Cotton", "canonical": "#fffaf0", "tonalRamp": ["#7a6f58", "#b9ad92", "#d6caaf", "#e6dcc6", "#f1eadb", "#faf6ee", "#fff8ea", "#fffaf0"] },
+      "signal-orange": { "role": "secondary", "displayName": "Signal orange", "canonical": "#f28c28", "tonalRamp": ["#4a3306", "#7a5409", "#a3700e", "#d9761a", "#f28c28", "#f59c45", "#f6cf7a", "#fcecc6"] },
+      "signal-orange-lit": { "role": "secondary", "displayName": "Signal Orange Lit", "canonical": "#f59c45", "tonalRamp": ["#4a3306", "#7a5409", "#d9761a", "#f28c28", "#f59c45", "#f4c35a", "#f8db9a", "#fcf0d4"] },
+      "ink": { "role": "neutral", "displayName": "Indigo Ink", "canonical": "#0e1745", "tonalRamp": ["#0b1240", "#0e1745", "#1b2e7a", "#3a4677", "#5f6a96", "#8a93b5", "#c9d3f2", "#eef1fb"] },
+      "ink-soft": { "role": "neutral", "displayName": "Soft Ink", "canonical": "#3a4677", "tonalRamp": ["#0e1745", "#1f2a5c", "#3a4677", "#525d8a", "#6f799f", "#9aa2c0", "#c6cbe0", "#eceef6"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The single hero headline, cotton on cloth, balanced wrap." },
+      "display-hausa": { "displayName": "Display (Hausa)", "purpose": "The hero headline when the language is Hausa; smaller clamp so longer copy still balances." },
+      "headline": { "displayName": "Headline", "purpose": "One per band." },
+      "title": { "displayName": "Title", "purpose": "Station titles, the Track label, small band headings." },
+      "figure": { "displayName": "Figure", "purpose": "The live fare; prices and code digits share the display-800 tabular treatment." },
+      "lede": { "displayName": "Lede", "purpose": "Paragraph under a headline, max 34rem." },
+      "body": { "displayName": "Body", "purpose": "Band and station copy." },
+      "label": { "displayName": "Label", "purpose": "Field labels and the fare label, sentence case." }
+    },
+    "textures": [
+      { "name": "weave", "value": "SVG feTurbulence fractalNoise baseFrequency 0.9 0.035, 3 octaves, indigo-tinted at 0.5 alpha, 240px tile, blended soft-light over indigo", "purpose": "Horizontal fibre of woven indigo cloth on every cloth surface." },
+      { "name": "slub", "value": "SVG feTurbulence fractalNoise baseFrequency 0.6 0.08, 2 octaves, warm brown at 0.16 alpha, 200px tile", "purpose": "Undyed cotton slub on every cotton surface." }
+    ],
+    "shadows": [
+      { "name": "laid-cloth", "value": "0 30px 60px -30px rgba(11,18,64,0.9)", "purpose": "Booking swatch and the how-it-works band lifting off the cloth." },
+      { "name": "signal orange-glow", "value": "0 10px 24px -10px rgba(242,140,40,0.7), 0 2px 0 rgba(11,18,64,0.25)", "purpose": "Primary button at rest." },
+      { "name": "signal orange-glow-hover", "value": "0 14px 28px -10px rgba(242,140,40,0.85), 0 2px 0 rgba(11,18,64,0.25)", "purpose": "Primary button on hover." },
+      { "name": "dock-lift", "value": "0 -12px 30px -12px rgba(11,18,64,0.6)", "purpose": "Mobile dock cast upward onto the page." },
+      { "name": "inset-thread", "value": "inset 0 0 0 2px rgba(241,234,219,0.35)", "purpose": "Outline buttons draw their border as an inset shadow." }
+    ],
+    "motion": [
+      { "name": "ease-cloth", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "The world's ease for button press, ring growth, route dye-in and bloom." },
+      { "name": "press", "value": "transform 180ms ease-cloth; translateY(1px) scale(0.99)", "purpose": "Button active state." },
+      { "name": "dye-in", "value": "stroke-dashoffset 1 to 0, 1400ms ease-cloth", "purpose": "Route mask reveal on the resist map." },
+      { "name": "bloom", "value": "scale 0.2 to 1 with fade, 1100ms ease-cloth", "purpose": "A and B rings blooming on the resist map." },
+      { "name": "reduced-motion", "value": "all animation and transition durations 1ms", "purpose": "prefers-reduced-motion: reduce." }
+    ],
+    "focus": [
+      { "name": "signal orange-ring", "value": "outline: 3px solid #f28c28; outline-offset: 3px", "purpose": "Global focus-visible on public surfaces." },
+      { "name": "field-halo", "value": "border-color #2c47a8; box-shadow 0 0 0 4px rgba(44,71,168,0.18)", "purpose": "Cotton field focus." },
+      { "name": "field-dark-halo", "value": "border-color #f28c28; box-shadow 0 0 0 4px rgba(242,140,40,0.2)", "purpose": "Dark field focus." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (Signal orange)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one committing action: Book, Send, Call the desk.",
+      "html": "<button class=\"ds-btn-primary\">Book this pickup <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 3.25rem; padding: 0 1.5rem; border: 0; border-radius: 0.85rem; font-family: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif; font-weight: 750; font-size: 1.05rem; letter-spacing: -0.01em; background: #f28c28; color: #0b1240; box-shadow: 0 10px 24px -10px rgba(242,140,40,0.7), 0 2px 0 rgba(11,18,64,0.25); cursor: pointer; transition: transform 180ms cubic-bezier(0.16,1,0.3,1), background-color 180ms ease, box-shadow 180ms ease; } .ds-btn-primary:hover { background: #f59c45; box-shadow: 0 14px 28px -10px rgba(242,140,40,0.85), 0 2px 0 rgba(11,18,64,0.25); } .ds-btn-primary:active { transform: translateY(1px) scale(0.99); } .ds-btn-primary:focus-visible { outline: 3px solid #f28c28; outline-offset: 3px; }"
+    },
+    {
+      "name": "Cotton Button",
+      "kind": "button",
+      "refersTo": "button-cotton",
+      "description": "Secondary action placed on indigo: Track, sellers CTA.",
+      "html": "<div class=\"ds-cloth-bg\"><button class=\"ds-btn-cotton\">Track</button></div>",
+      "css": ".ds-cloth-bg { background: #0b1240; padding: 24px; border-radius: 1.2rem; } .ds-btn-cotton { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 3.25rem; padding: 0 1.5rem; border: 0; border-radius: 0.85rem; font-family: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif; font-weight: 750; font-size: 1.05rem; letter-spacing: -0.01em; background: #f1eadb; color: #0e1745; cursor: pointer; transition: transform 180ms cubic-bezier(0.16,1,0.3,1), background-color 180ms ease; } .ds-btn-cotton:hover { background: #fff8ea; } .ds-btn-cotton:active { transform: translateY(1px) scale(0.99); } .ds-btn-cotton:focus-visible { outline: 3px solid #f28c28; outline-offset: 3px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Cotton thread outline on pit; the dock's Track.",
+      "html": "<div class=\"ds-pit-bg\"><button class=\"ds-btn-ghost\">Track</button></div>",
+      "css": ".ds-pit-bg { background: #0b1240; padding: 24px; } .ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 3.25rem; padding: 0 1.5rem; border: 0; border-radius: 0.85rem; font-family: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif; font-weight: 750; font-size: 1.05rem; background: transparent; color: #f1eadb; box-shadow: inset 0 0 0 2px rgba(241,234,219,0.35); cursor: pointer; transition: box-shadow 180ms ease, transform 180ms cubic-bezier(0.16,1,0.3,1); } .ds-btn-ghost:hover { box-shadow: inset 0 0 0 2px #f1eadb; } .ds-btn-ghost:active { transform: translateY(1px) scale(0.99); } .ds-btn-ghost:focus-visible { outline: 3px solid #f28c28; outline-offset: 3px; }"
+    },
+    {
+      "name": "Landmark Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Bright cotton select or input on cotton panels, with a sentence-case label.",
+      "html": "<label class=\"ds-label\" for=\"ds-from\">A · From</label><select id=\"ds-from\" class=\"ds-field\"><option>BUK New Campus</option><option>Kantin Kwari</option></select>",
+      "css": ".ds-label { display: block; margin-bottom: 0.375rem; font-family: 'Figtree', system-ui, sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; color: #3a4677; } .ds-field { width: 100%; min-height: 3.4rem; border-radius: 0.75rem; font: 600 1.05rem/1.2 'Figtree', system-ui, sans-serif; padding: 0 2.6rem 0 1rem; appearance: none; -webkit-appearance: none; background-color: #fffaf0; background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2314215c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\"); background-repeat: no-repeat; background-position: right 1rem center; border: 2px solid rgba(14,23,69,0.14); color: #0e1745; transition: border-color 160ms ease, box-shadow 160ms ease; } .ds-field:hover { border-color: rgba(14,23,69,0.3); } .ds-field:focus, .ds-field:focus-visible { outline: none; border-color: #2c47a8; box-shadow: 0 0 0 4px rgba(44,71,168,0.18); }"
+    },
+    {
+      "name": "Dark Field",
+      "kind": "input",
+      "refersTo": "field-dark",
+      "description": "Tracking-code input on the deep-dyed strip; signal orange focus.",
+      "html": "<div class=\"ds-pit-wrap\"><input class=\"ds-field-dark\" placeholder=\"FMR-KN-000000\" /></div>",
+      "css": ".ds-pit-wrap { background: #0b1240; padding: 24px; } .ds-field-dark { width: 100%; min-height: 3.4rem; border-radius: 0.75rem; font: 600 1.05rem/1.2 'Figtree', system-ui, sans-serif; font-variant-numeric: tabular-nums lining-nums; letter-spacing: 0.025em; text-transform: uppercase; padding: 0 1rem; background-color: rgba(11,18,64,0.55); color: #f1eadb; border: 2px solid rgba(241,234,219,0.22); transition: border-color 160ms ease, box-shadow 160ms ease; } .ds-field-dark::placeholder { color: rgba(201,211,242,0.55); } .ds-field-dark:focus, .ds-field-dark:focus-visible { outline: none; border-color: #f28c28; box-shadow: 0 0 0 4px rgba(242,140,40,0.2); }"
+    },
+    {
+      "name": "Language Toggle",
+      "kind": "nav",
+      "refersTo": "language-toggle",
+      "description": "EN / HA segmented pill in the header of every public page.",
+      "html": "<div class=\"ds-pit-bar\"><div class=\"ds-lang\" role=\"group\" aria-label=\"Language\"><button aria-pressed=\"true\" class=\"ds-lang-btn is-on\">EN</button><button aria-pressed=\"false\" class=\"ds-lang-btn\">HA</button></div></div>",
+      "css": ".ds-pit-bar { background: #0b1240; padding: 16px; } .ds-lang { display: inline-flex; padding: 0.25rem; border-radius: 9999px; background: rgba(11,18,64,0.55); box-shadow: inset 0 0 0 1px rgba(241,234,219,0.2); } .ds-lang-btn { min-width: 2.75rem; height: 2.25rem; padding: 0 0.75rem; border: 0; border-radius: 9999px; background: transparent; color: #c9d3f2; font: 700 0.875rem 'Figtree', system-ui, sans-serif; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; } .ds-lang-btn:hover { color: #f1eadb; } .ds-lang-btn.is-on { background: #f1eadb; color: #0b1240; } .ds-lang-btn:focus-visible { outline: 3px solid #f28c28; outline-offset: 3px; }"
+    },
+    {
+      "name": "Booking Swatch with Running Stitch",
+      "kind": "card",
+      "refersTo": "booking-swatch",
+      "description": "Undyed cotton resist panel bound by an irregular, displaced running stitch inset 10px; holds the live fare.",
+      "html": "<div class=\"ds-swatch\"><svg class=\"ds-stitch\" aria-hidden=\"true\"><filter id=\"ds-thread\" x=\"-2%\" y=\"-2%\" width=\"104%\" height=\"104%\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.06 0.09\" numOctaves=\"2\" seed=\"11\"/><feDisplacementMap in=\"SourceGraphic\" scale=\"3.2\"/></filter><rect width=\"100%\" height=\"100%\" rx=\"14\" fill=\"none\" stroke=\"rgba(27,46,122,0.55)\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-dasharray=\"7 4.5 5 6.5 8.5 4 6 5.5 4.5 7\" filter=\"url(#ds-thread)\"/></svg><div class=\"ds-swatch-body\"><span class=\"ds-fare-label\">Fare</span><span class=\"ds-fare\">₦1,400</span><span class=\"ds-eta\">About 35 min</span></div></div>",
+      "css": ".ds-swatch { position: relative; background: #f1eadb; color: #0e1745; border-radius: 1.4rem; padding: 28px; box-shadow: 0 30px 60px -30px rgba(11,18,64,0.9); max-width: 26rem; } .ds-stitch { position: absolute; inset: 10px; width: calc(100% - 20px); height: calc(100% - 20px); overflow: visible; pointer-events: none; } .ds-swatch-body { position: relative; display: grid; gap: 0.25rem; } .ds-fare-label { font: 700 0.8rem 'Figtree', system-ui, sans-serif; letter-spacing: 0.01em; color: #3a4677; } .ds-fare { font-family: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif; font-weight: 800; font-size: 2.6rem; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums lining-nums; color: #0e1745; } .ds-eta { font: 600 0.875rem 'Figtree', system-ui, sans-serif; color: #3a4677; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Tie-Resist Station",
+      "kind": "custom",
+      "refersTo": "track-strip",
+      "description": "Concentric cotton rings on pit with dye-bleed displacement; marks how-it-works stations and map landmarks.",
+      "html": "<svg class=\"ds-station\" viewBox=\"0 0 160 160\" aria-hidden=\"true\"><filter id=\"ds-st\" x=\"-10%\" y=\"-10%\" width=\"120%\" height=\"120%\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.07\" numOctaves=\"2\" seed=\"3\"/><feDisplacementMap in=\"SourceGraphic\" scale=\"5\"/><feGaussianBlur stdDeviation=\"0.6\"/></filter><circle cx=\"80\" cy=\"80\" r=\"76\" fill=\"#0b1240\"/><g filter=\"url(#ds-st)\" fill=\"none\" stroke=\"#f1eadb\"><circle cx=\"80\" cy=\"80\" r=\"70\" stroke-width=\"1.6\" stroke-opacity=\"0.28\" stroke-dasharray=\"2 4\"/><circle cx=\"80\" cy=\"80\" r=\"58\" stroke-width=\"2.6\" stroke-opacity=\"0.4\"/><circle cx=\"80\" cy=\"80\" r=\"46\" stroke-width=\"1.4\" stroke-opacity=\"0.55\" stroke-dasharray=\"1.5 3.5\"/><circle cx=\"80\" cy=\"80\" r=\"34\" stroke-width=\"3\" stroke-opacity=\"0.8\"/></g><g transform=\"translate(62 62) scale(1.5)\" fill=\"none\" stroke=\"#f1eadb\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z\"/><path d=\"M12 22V12\"/><path d=\"m3.3 7 8.7 5 8.7-5\"/></g></svg>",
+      "css": ".ds-station { width: 10rem; height: 10rem; display: block; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Kofar Mata Indigo",
+    "overview": "The public face of Fimrash is cloth from Kano's own dye pits at Kofar Mata. Indigo, woven and drenched, is the ground of every public surface; undyed cotton appears only where the cloth was \"bound\", as resist panels that carry the things a sender touches (the booking swatch, the fare board, the handover-code cards). A running stitch, irregular and slightly wandering, borders those panels the way thread bound the cloth before dyeing. Tie-resist rings mark places: landmarks on the map, stations in the how-it-works strip. One colour is not from the vat: signal orange, reserved for the action.\n\nThe world is confident and dense rather than airy. Bands alternate cloth and cotton at full width, each a single statement; the type is heavy, tight and close-set, the numbers are big and tabular because the fare is the promise. Texture is always real-feeling (SVG fibre noise blended soft-light into indigo, low-contrast slub on cotton) and never decorative gradients for their own sake. The world deliberately refuses the green-and-white courier template and dark neon \"tech\" styling.\n\nScope: this file describes the public world only (homepage, public header, footer and mobile dock, and the indigo re-dye of /send and /track). The internal consoles at /rider and /ops (rider console, reconciliation hub, auth gate, internal header) intentionally keep the older slate/emerald operational look and are outside this system.",
+    "keyCharacteristics": [
+      "Indigo cloth ground with woven fibre texture; cotton resist panels for every interactive surface.",
+      "Hand-irregular running-stitch borders inset inside panels, never on the panel edge.",
+      "Tie-resist concentric rings as the place-marker and station motif.",
+      "Signal orange is the single action colour; everything else is indigo or cotton.",
+      "Heavy Bricolage Grotesque display over Figtree body, both carrying the Hausa hooked letters.",
+      "Bilingual by construction: the Hausa headline has its own smaller clamp so longer copy still balances."
+    ],
+    "rules": [
+      { "name": "The One Spice Rule", "body": "Signal orange is used only for the primary action, focus and selection. If it appears as decoration, a border, or a background field, it is wrong.", "section": "colors" },
+      { "name": "The No-Grey Rule", "body": "Secondary text is always tinted from the vat: soft ink on cotton, wash or mist on indigo. A neutral grey never appears on a public surface.", "section": "colors" },
+      { "name": "The Cloth-and-Cotton Rule", "body": "Every public surface is either cloth (indigo, woven) or cotton (undyed, slub). A plain white or a flat untextured indigo panel is not part of the world.", "section": "colors" },
+      { "name": "The Tabular Promise Rule", "body": "Every price, minute count, waybill, phone number and code uses tabular lining numerals. Numbers that are promises do not jiggle.", "section": "typography" },
+      { "name": "The Two-Clamp Rule", "body": "Any headline whose Hausa copy runs longer than its English gets its own Hausa size, never a truncation or a shared compromise.", "section": "typography" },
+      { "name": "The Dye-Tinted Shadow Rule", "body": "Every shadow is pit indigo or signal orange, long and negatively spread. Neutral black or grey shadows are not part of the world.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do put every interactive surface on cotton or deep cloth, bordered by the irregular running stitch inset 10px (7px on small cards).",
+      "Do keep signal orange to the primary action, focus ring and selection; one signal orange button per band.",
+      "Do set every price, time, code and phone number in tabular lining numerals; prices in display 800.",
+      "Do tint all secondary text from the vat: soft ink on cotton, wash or mist on indigo.",
+      "Do give Hausa copy its own size where it runs long, and keep the EN/HA toggle in the header of every public page.",
+      "Do use tie-resist rings for places and stations, with the dye-bleed displacement so edges never look machine-perfect.",
+      "Do keep Send and Track one tap away: header on desktop, the fixed dock on phones."
+    ],
+    "donts": [
+      "Don't use the green-and-white courier palette or dark neon tech styling on public pages; the emerald and slate look belongs only to the internal /rider and /ops consoles.",
+      "Don't use neutral grey for text, borders or shadows.",
+      "Don't draw the stitch as a uniform CSS dashed outline on the panel edge; the thread is irregular, displaced and inset.",
+      "Don't use signal orange as a background field, border or decoration.",
+      "Don't add small uppercase kicker or eyebrow lines above headlines; the headline stands alone in each band.",
+      "Don't invent trust claims, ratings or counts; trust is shown by mechanism (the code cards, the fare board).",
+      "Don't make the map the only way to choose a route."
+    ]
+  }
+}

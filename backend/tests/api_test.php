@@ -105,19 +105,23 @@ $r = call('GET', '/api/auth/me', null, implode('.', $forged));
 check('tampered token rejected', $r['status'] === 401);
 
 $r = call('POST', '/api/riders', ['name' => 'Musa Garba', 'phone' => '08156661246', 'bike_number' => 'kn-942-trn', 'active_zone' => 'Z2_COMMERCIAL_RESIDENTIAL', 'pin' => '1234'], $admin);
-check('weak rider PIN rejected', $r['status'] === 422, $r);
-$r = call('POST', '/api/riders', ['name' => 'Musa Garba', 'phone' => '08156661246', 'bike_number' => 'kn-942-trn', 'active_zone' => 'Z2_COMMERCIAL_RESIDENTIAL', 'pin' => '5821'], $admin);
+check('4-digit rider PIN rejected (6+ required)', $r['status'] === 422, $r);
+$r = call('POST', '/api/riders', ['name' => 'Musa Garba', 'phone' => '08156661246', 'bike_number' => 'kn-942-trn', 'pin' => '123456'], $admin);
+check('sequential 6-digit PIN rejected', $r['status'] === 422, $r);
+$r = call('POST', '/api/riders', ['name' => 'Musa Garba', 'phone' => '08156661246', 'bike_number' => 'kn-942-trn', 'pin' => '111222'], $admin);
+check('two-digit-repeat PIN rejected', $r['status'] === 422, $r);
+$r = call('POST', '/api/riders', ['name' => 'Musa Garba', 'phone' => '08156661246', 'bike_number' => 'kn-942-trn', 'active_zone' => 'Z2_COMMERCIAL_RESIDENTIAL', 'pin' => '582194'], $admin);
 check('admin creates rider', $r['status'] === 201 && $r['json']['rider']['bikeNumber'] === 'KN-942-TRN', $r);
 $rider1Id = $r['json']['rider']['id'] ?? '';
-$r = call('POST', '/api/riders', ['name' => 'Sani Usman', 'phone' => '08034567890', 'bike_number' => 'KN-781-TRN', 'active_zone' => 'Z4_OUTER_RING', 'pin' => '9035'], $admin);
+$r = call('POST', '/api/riders', ['name' => 'Sani Usman', 'phone' => '08034567890', 'bike_number' => 'KN-781-TRN', 'active_zone' => 'Z4_OUTER_RING', 'pin' => '903571'], $admin);
 $rider2Id = $r['json']['rider']['id'] ?? '';
-$r = call('POST', '/api/riders', ['name' => 'Dupe', 'phone' => '08156661246', 'bike_number' => 'KN-000-AAA', 'pin' => '7777'], $admin);
+$r = call('POST', '/api/riders', ['name' => 'Dupe', 'phone' => '08156661246', 'bike_number' => 'KN-000-AAA', 'pin' => '770719'], $admin);
 check('duplicate rider phone rejected', $r['status'] === 422);
 
-$r = call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => '+234 815 666 1246', 'secret' => '5821']);
+$r = call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => '+234 815 666 1246', 'secret' => '582194']);
 check('rider signs in with phone in any format', $r['status'] === 200, $r);
 $rider1 = $r['json']['token'] ?? '';
-$r = call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => 'KN-781-TRN', 'secret' => '9035']);
+$r = call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => 'KN-781-TRN', 'secret' => '903571']);
 check('rider signs in with bike plate', $r['status'] === 200, $r);
 $rider2 = $r['json']['token'] ?? '';
 $r = call('GET', '/api/reconciliation', null, $rider1);
@@ -230,11 +234,30 @@ check('ledger: CoD pending ₦0, paid ₦15,000', $s['codPendingPayout'] == 0 &&
 echo "\nRevocation & rate limiting\n";
 call('POST', "/api/riders/$rider2Id", ['active' => false], $admin);
 check('deactivated rider token stops working', call('GET', '/api/auth/me', null, $rider2)['status'] === 401);
+// A couple of typos followed by the right PIN must still work, and reset the counter.
+call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => '08156661246', 'secret' => '000999']);
+call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => 'KN-942-TRN', 'secret' => '000999']);
+check('right PIN after 2 typos still signs in', call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => '08156661246', 'secret' => '582194'])['status'] === 200);
+
 $codes = [];
-for ($i = 0; $i < 9; $i++) {
-    $codes[] = call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => '08156661246', 'secret' => '0000'])['status'];
+foreach (['08156661246', 'KN-942-TRN', '+2348156661246', 'kn-942-trn', '08156661246', '08156661246'] as $spelling) {
+    $codes[] = call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => $spelling, 'secret' => '000999'])['status'];
 }
-check('login brute force throttled (429)', in_array(429, $codes, true), $codes);
+check('wrong PINs across phone/plate spellings share one budget (6th → 429)', $codes === [401, 401, 401, 401, 401, 429], $codes);
+$r = call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => '08156661246', 'secret' => '582194']);
+check('locked account refuses even the right PIN until the window passes', $r['status'] === 429 && isset($r['json']['retryAfter']), $r);
+
+$unknown = [];
+for ($i = 0; $i < 6; $i++) {
+    $unknown[] = call('POST', '/api/auth/login', ['role' => 'rider', 'identifier' => '08099999999', 'secret' => '000999'])['status'];
+}
+check('unknown accounts throttle identically (no account enumeration)', $unknown === [401, 401, 401, 401, 401, 429], $unknown);
+
+$probe = [];
+for ($i = 0; $i < 60; $i++) {
+    $probe[] = call('GET', '/api/riders')['status'];
+}
+check('anonymous probing of internal endpoints throttled', in_array(429, $probe, true));
 
 echo "\n$passed passed, $failed failed\n";
 if ($failed) {

@@ -44,22 +44,13 @@ html.light {
   }
 }
 
-/* Subtle, Calm Background System (No disco/neon gradients) */
+/* Plain console surfaces for the internal /rider and /ops screens */
 html.dark .bg-ambient-grid {
   background-color: #0b0f19;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(5, 150, 105, 0.05) 0%, transparent 60%),
-    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 100% 100%, 32px 32px, 32px 32px;
 }
 
 html.light .bg-ambient-grid {
   background-color: #f8fafc;
-  background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
-  background-size: 32px 32px, 32px 32px;
 }
 
 /* Muted Executive Cards */
@@ -77,68 +68,68 @@ html.light .glass-card {
 }
 
 /* Harmonious Typography Overrides */
-html.dark h1, html.dark h2, html.dark h3, html.dark h4 {
+html.dark .legacy h1, html.dark .legacy h2, html.dark .legacy h3, html.dark .legacy h4 {
   color: #f9fafb !important;
 }
-html.dark p, html.dark .text-slate-400 {
+html.dark .legacy p, html.dark .legacy .text-slate-400 {
   color: #9ca3af !important;
 }
-html.dark .text-slate-300 {
+html.dark .legacy .text-slate-300 {
   color: #d1d5db !important;
 }
 
-html.light h1, html.light h2, html.light h3, html.light h4 {
+html.light .legacy h1, html.light .legacy h2, html.light .legacy h3, html.light .legacy h4 {
   color: #0f172a !important;
 }
-html.light p, html.light .text-slate-400 {
+html.light .legacy p, html.light .legacy .text-slate-400 {
   color: #475569 !important;
 }
-html.light .text-slate-300 {
+html.light .legacy .text-slate-300 {
   color: #334155 !important;
 }
 
 /* Calm Input Fields */
-html.dark input, html.dark select {
+html.dark .legacy input, html.dark .legacy select {
   background-color: #0d131f !important;
   border-color: #1f293d !important;
   color: #f3f4f6 !important;
 }
-html.dark input:focus, html.dark select:focus {
-  border-color: #059669 !important;
+html.dark .legacy input:focus, html.dark .legacy select:focus {
+  border-color: #2c5aa0 !important;
   outline: none;
 }
 
-html.light input, html.light select {
+html.light .legacy input, html.light .legacy select {
   background-color: #f8fafc !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
-html.light input:focus, html.light select:focus {
-  border-color: #059669 !important;
+html.light .legacy input:focus, html.light .legacy select:focus {
+  border-color: #2c5aa0 !important;
   outline: none;
 }
 
 /* Sub-containers & panels */
-html.dark .bg-slate-950,
-html.dark .bg-slate-950\/40,
-html.dark .bg-slate-950\/50,
-html.dark .bg-slate-950\/60,
-html.dark .bg-slate-950\/70,
-html.dark .bg-slate-950\/80,
-html.dark .bg-slate-950\/90,
-html.dark .bg-slate-900 {
+html.dark .legacy .bg-slate-950,
+html.dark .legacy .bg-slate-950\/40,
+html.dark .legacy .bg-slate-950\/50,
+html.dark .legacy .bg-slate-950\/60,
+html.dark .legacy .bg-slate-950\/70,
+html.dark .legacy .bg-slate-950\/80,
+html.dark .legacy .bg-slate-950\/90,
+html.dark .legacy .bg-slate-900 {
   background-color: #0d131f !important;
   border-color: #1f293d !important;
 }
 
-html.light .bg-slate-950,
-html.light .bg-slate-950\/40,
-html.light .bg-slate-950\/50,
-html.light .bg-slate-950\/60,
-html.light .bg-slate-950\/70,
-html.light .bg-slate-950\/80,
-html.light .bg-slate-950\/90,
-html.light .bg-slate-900 {
+html.light .legacy .bg-slate-950,
+html.light .legacy .bg-slate-950\/40,
+html.light .legacy .bg-slate-950\/50,
+html.light .legacy .bg-slate-950\/60,
+html.light .legacy .bg-slate-950\/70,
+html.light .legacy .bg-slate-950\/80,
+html.light .legacy .bg-slate-950\/90,
+html.light .legacy .bg-slate-900 {
   background-color: #f8fafc !important;
   border-color: #e2e8f0 !important;
   color: #0f172a !important;
@@ -157,7 +148,7 @@ html.light .bg-slate-900 {
 
 /* Mobile tap target safeguards */
 @media (max-width: 640px) {
-  input, select, button {
+  .legacy input, .legacy select, .legacy button {
     min-height: 44px;
     font-size: 15px !important;
   }

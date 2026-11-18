@@ -30,6 +30,10 @@ export default function AuthGate({ targetRole, currentUser, onLoginSuccess }) {
 
   return (
     <div className="max-w-md mx-auto py-8 sm:py-12">
+      <div className="flex justify-center mb-6">
+        <img src="/brand/fimrash-lockup.png" alt="Fimrash Logistics" className="h-11 w-auto dark:hidden" />
+        <img src="/brand/fimrash-lockup-reversed.png" alt="Fimrash Logistics" className="h-11 w-auto hidden dark:block" />
+      </div>
       <div className="glass-card rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 

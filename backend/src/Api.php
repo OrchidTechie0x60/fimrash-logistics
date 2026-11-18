@@ -11,6 +11,10 @@ use PDO;
 
 class Api {
     private const OTP_MAX_ATTEMPTS = 5;
+    // Wrong-PIN budgets. With a 6-digit PIN and 15 failures a day, guessing takes decades.
+    private const LOGIN_FAILS_PER_15M = 5;
+    private const LOGIN_FAILS_PER_DAY = 15;
+    private const LOGIN_FAILS_PER_IP_HOUR = 20;
     private const ACTIVE_STATUSES = ['assigned', 'picked_up', 'in_transit', 'arrived'];
     private const RIDER_TRANSITIONS = [
         'assigned'   => ['picked_up'],
@@ -141,8 +145,8 @@ class Api {
             throw new HttpException(422, 'Enter your sign-in ID and PIN/password');
         }
 
-        RateLimiter::hit($this->db, 'login-ip:' . Http::clientIp(), 30, 900);
-        RateLimiter::hit($this->db, 'login-id:' . $role . ':' . strtolower($identifier), 8, 900);
+        $ip = Http::clientIp();
+        RateLimiter::hit($this->db, 'login-ip:' . $ip, 30, 900);
 
         if ($role === 'rider') {
             $phone = Http::normalisePhone($identifier) ?? '__none__';
@@ -159,11 +163,31 @@ class Api {
         }
         $account = $stmt->fetch();
 
+        // Failure buckets are keyed by the resolved account, so phone / plate / ID spellings of
+        // the same rider share one budget. Unknown identifiers get identical treatment, so the
+        // limiter never reveals which accounts exist.
+        $subject = $role . ':' . ($account['id'] ?? strtolower($identifier));
+        $buckets = [
+            ['fail-acct-15m:' . $subject, self::LOGIN_FAILS_PER_15M, 900],
+            ['fail-acct-24h:' . $subject, self::LOGIN_FAILS_PER_DAY, 86400],
+            ['fail-ip-1h:' . $ip, self::LOGIN_FAILS_PER_IP_HOUR, 3600],
+        ];
+        $locked = 'Too many wrong attempts for this account. It is locked for a while; ask the station manager if you need help now.';
+        RateLimiter::check($this->db, $buckets[0][0], $buckets[0][1], $buckets[0][2]);
+        RateLimiter::check($this->db, $buckets[1][0], $buckets[1][1], $buckets[1][2], $locked);
+        RateLimiter::check($this->db, $buckets[2][0], $buckets[2][1], $buckets[2][2]);
+
         // Verify against a dummy hash when the account is missing so timing doesn't reveal valid IDs.
         $hash = $account[$hashField] ?? password_hash('fimrash-timing-dummy', PASSWORD_DEFAULT);
         if (!password_verify($secret, $hash) || !$account) {
+            foreach ($buckets as [$bucket, , $window]) {
+                RateLimiter::record($this->db, $bucket, $window);
+            }
+            error_log("[Fimrash auth] failed {$role} sign-in for '" . substr($identifier, 0, 64) . "' from {$ip}");
             throw new HttpException(401, $role === 'rider' ? 'Wrong rider ID or PIN' : 'Wrong email or password');
         }
+        RateLimiter::clear($this->db, $buckets[0][0]);
+        RateLimiter::clear($this->db, $buckets[1][0]);
 
         if (password_needs_rehash($hash, PASSWORD_DEFAULT)) {
             $table = $role === 'rider' ? 'riders' : 'admin_users';

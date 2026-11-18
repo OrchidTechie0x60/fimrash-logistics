@@ -1,33 +1,12 @@
 import React, { useState } from 'react';
 import { Compass } from 'lucide-react';
+import { MAP_NODES } from '../data/kanoMap';
+import { useI18n } from '../i18n';
 
 export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelectLandmark, activeRiderName = null }) {
   const [hoveredNode, setHoveredNode] = useState(null);
+  const { t } = useI18n();
 
-  // Scaled coordinates representing Kano Metropolitan Layout on a 600x380 SVG grid
-  const MAP_NODES = [
-    { id: 'dawanau-market', name: 'Dawanau', label: 'Dawanau Grains', x: 120, y: 50, zone: 'Zone 4' },
-    { id: 'buk-new-campus', name: 'BUK New', label: 'BUK New Campus', x: 90, y: 150, zone: 'Zone 3' },
-    { id: 'buk-old-campus', name: 'BUK Old', label: 'BUK Old / Kabuga', x: 180, y: 180, zone: 'Zone 3' },
-    { id: 'singer-market', name: 'Singer', label: 'Singer FMCG Market', x: 310, y: 110, zone: 'Zone 1' },
-    { id: 'kwari-textiles', name: 'Kwari', label: 'Kantin Kwari Textiles', x: 330, y: 160, zone: 'Zone 1' },
-    { id: 'sabon-gari', name: 'Sabon Gari', label: 'Sabon Gari Market', x: 380, y: 130, zone: 'Zone 1' },
-    { id: 'nassarawa-gra', name: 'Nassarawa', label: 'Nassarawa GRA', x: 480, y: 170, zone: 'Zone 3' },
-    { id: 'post-office-murtala', name: 'Murtala Rd', label: 'Murtala Way / Post Office', x: 370, y: 200, zone: 'Zone 2' },
-    { id: 'farm-centre', name: 'Farm Centre', label: 'Farm Centre GSM', x: 430, y: 250, zone: 'Zone 2' },
-    { id: 'zoo-road', name: 'Zoo Road', label: 'Zoo Rd / Sahad Stores', x: 310, y: 270, zone: 'Zone 2' },
-    { id: 'gyadi-gyadi', name: 'Gyadi-Gyadi', label: 'Gyadi-Gyadi / Court Rd', x: 390, y: 295, zone: 'Zone 2' },
-    { id: 'naibawa', name: 'Naibawa', label: 'Naibawa / Yan Lemo', x: 380, y: 345, zone: 'Zone 3' },
-    { id: 'tarauni-gra', name: 'Tarauni', label: 'Tarauni Residential', x: 450, y: 305, zone: 'Zone 3' },
-    { id: 'janbulo-dorayi', name: 'Janbulo', label: 'Janbulo / Dorayi', x: 160, y: 220, zone: 'Zone 3' },
-    { id: 'rijiyar-zaki', name: 'Rijiyar Zaki', label: 'Rijiyar Zaki / Gwarzo', x: 100, y: 195, zone: 'Zone 4' },
-    { id: 'kurna-rijiyar-lemo', name: 'Kurna', label: 'Kurna / Katsina Rd', x: 250, y: 75, zone: 'Zone 4' },
-    { id: 'sharada-industrial', name: 'Sharada', label: 'Sharada Industrial', x: 200, y: 290, zone: 'Zone 4' },
-    { id: 'hotoro-gra', name: 'Hotoro', label: 'Hotoro GRA / NNPC', x: 530, y: 270, zone: 'Zone 3' },
-    { id: 'kofar-wambai', name: 'K. Wambai', label: 'Kofar Wambai Market', x: 285, y: 185, zone: 'Zone 1' },
-    { id: 'bata-fagge', name: 'Bata', label: 'Bata / Fagge Axis', x: 355, y: 150, zone: 'Zone 1' },
-    { id: 'unguwa-uku', name: 'Unguwa Uku', label: 'Unguwa Uku / Zaria Rd Park', x: 320, y: 350, zone: 'Zone 4' }
-  ];
 
   const pNode = MAP_NODES.find(n => n.id === pickupLandmark?.id) || MAP_NODES[4]; // Default Kwari
   const dNode = MAP_NODES.find(n => n.id === dropoffLandmark?.id) || MAP_NODES[6]; // Default Nassarawa
@@ -54,23 +33,23 @@ export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelect
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight flex items-center space-x-1.5">
-              <span>Kano Metropolis Corridor Radar</span>
+              <span>{t('map.title')}</span>
               <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.2 rounded font-semibold">
-                Approximate
+                {t('map.approx')}
               </span>
             </h3>
-            <p className="text-[10px] text-slate-500">Landmark-to-landmark route (not live GPS)</p>
+            <p className="text-[10px] text-slate-500">{t('map.sub')}</p>
           </div>
         </div>
 
         {/* Telemetry Pills (Calm, muted) */}
         <div className="flex items-center space-x-2 text-xs">
           <div className="bg-slate-50 dark:bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center space-x-1">
-            <span className="text-slate-400 text-[10px] font-semibold">Route:</span>
+            <span className="text-slate-400 text-[10px] font-semibold">{t('map.distance')}</span>
             <span className="text-slate-800 dark:text-slate-200 font-mono font-bold">{estKm} km</span>
           </div>
           <div className="bg-slate-50 dark:bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center space-x-1">
-            <span className="text-slate-400 text-[10px] font-semibold">ETA:</span>
+            <span className="text-slate-400 text-[10px] font-semibold">{t('map.eta')}</span>
             <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">~{estMins} mins</span>
           </div>
         </div>
@@ -194,7 +173,7 @@ export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelect
           </div>
           <div>
             <span className="font-bold text-white text-[10px] block leading-tight">{activeRiderName}</span>
-            <span className="text-[9px] text-slate-400">Assigned courier</span>
+            <span className="text-[9px] text-slate-400">{t('map.courier')}</span>
           </div>
         </div>
         )}
@@ -203,11 +182,11 @@ export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelect
         <div className="absolute top-2.5 right-2.5 bg-slate-900/95 px-2 py-1 rounded-lg border border-slate-800 flex items-center space-x-2 text-[9px] text-slate-400">
           <div className="flex items-center space-x-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-            <span className="text-emerald-300">Pickup</span>
+            <span className="text-emerald-300">{t('hero.mapPickup')}</span>
           </div>
           <div className="flex items-center space-x-1">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block" />
-            <span className="text-sky-300">Dropoff</span>
+            <span className="text-sky-300">{t('hero.mapDropoff')}</span>
           </div>
         </div>
       </div>

@@ -1,0 +1,203 @@
+/* ─────────────────────────────────────────────────────────────
+   Kofar Mata Indigo: the public world of Fimrash.
+   Kano's dye pits: indigo cloth as the ground, undyed cotton where
+   the cloth was bound (resist), one accent for the action: the brand's signal orange (the arrow in the logo).
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --iw-pit: #0b1240;        /* deepest dye, the bottom of the pit */
+  --iw-indigo: #14215c;     /* the cloth */
+  --iw-indigo-2: #1b2e7a;   /* a lighter dip */
+  --iw-indigo-3: #2c47a8;   /* first dip */
+  --iw-wash: #8fa8e8;       /* faded indigo, secondary text on dark */
+  --iw-mist: #c9d3f2;       /* body text on dark */
+  --iw-cotton: #f1eadb;     /* undyed, resist */
+  --iw-cotton-2: #e6dcc6;   /* cotton in shade */
+  --iw-thread: #b9ad92;     /* stitch on cotton */
+  --iw-turmeric: #f28c28;   /* the one action colour: brand signal orange */
+  --iw-turmeric-dk: #d9761a;
+  --iw-ink: #0e1745;        /* text on cotton */
+  --iw-ink-soft: #3a4677;   /* secondary text on cotton (indigo-tinted, never grey) */
+
+  --iw-display: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif;
+  --iw-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --iw-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Woven indigo: horizontal fibre noise. */
+  --iw-weave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9 0.035' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.66 0 0 0 0 0.95 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Cotton slub for undyed panels. */
+  --iw-slub: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6 0.08' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.38 0 0 0 0 0.25 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Surfaces ─────────────────────────────────────────────── */
+.iw {
+  font-family: var(--iw-body);
+  color: var(--iw-mist);
+  background: var(--iw-indigo);
+  -webkit-font-smoothing: antialiased;
+}
+.iw ::selection { background: var(--iw-turmeric); color: var(--iw-pit); }
+.iw :focus-visible { outline: 3px solid var(--iw-turmeric); outline-offset: 3px; border-radius: 6px; }
+
+.iw-cloth {
+  background-color: var(--iw-indigo);
+  background-image: var(--iw-weave), radial-gradient(120% 90% at 70% 0%, var(--iw-indigo-2) 0%, transparent 60%),
+    radial-gradient(90% 80% at 0% 100%, var(--iw-pit) 0%, transparent 70%);
+  background-blend-mode: soft-light, normal, normal;
+}
+.iw-cloth-deep {
+  background-color: var(--iw-pit);
+  background-image: var(--iw-weave);
+  background-blend-mode: soft-light;
+}
+.iw-cotton {
+  background-color: var(--iw-cotton);
+  background-image: var(--iw-slub);
+  color: var(--iw-ink);
+}
+.iw-cotton-shade {
+  background-color: var(--iw-cotton-2);
+  background-image: var(--iw-slub);
+  color: var(--iw-ink);
+}
+
+/* ── Type ─────────────────────────────────────────────────── */
+.iw-display {
+  font-family: var(--iw-display);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  text-wrap: balance;
+  font-optical-sizing: auto;
+}
+.iw-h2 {
+  font-family: var(--iw-display);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  font-size: clamp(2rem, 4.2vw, 3.5rem);
+  text-wrap: balance;
+}
+.iw-h3 { font-family: var(--iw-display); font-weight: 700; letter-spacing: -0.02em; font-size: 1.35rem; line-height: 1.15; }
+.iw-lede { font-size: clamp(1.05rem, 1.4vw, 1.2rem); line-height: 1.55; max-width: 34rem; }
+.iw-num { font-variant-numeric: tabular-nums lining-nums; font-feature-settings: 'tnum' 1, 'lnum' 1; }
+.iw-label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; }
+
+/* ── Controls ─────────────────────────────────────────────── */
+.iw-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+  min-height: 3.25rem; padding: 0 1.5rem; border-radius: 0.85rem;
+  font-family: var(--iw-display); font-weight: 750; font-size: 1.05rem; letter-spacing: -0.01em;
+  transition: transform 180ms var(--iw-ease), background-color 180ms ease, box-shadow 180ms ease;
+  cursor: pointer; white-space: nowrap;
+}
+.iw-btn:active { transform: translateY(1px) scale(0.99); }
+.iw-btn-primary {
+  background: var(--iw-turmeric); color: var(--iw-pit);
+  box-shadow: 0 10px 24px -10px rgba(242, 140, 40, 0.7), 0 2px 0 rgba(11, 18, 64, 0.25);
+}
+.iw-btn-primary:hover { background: #f59c45; box-shadow: 0 14px 28px -10px rgba(242, 140, 40, 0.85), 0 2px 0 rgba(11, 18, 64, 0.25); }
+.iw-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+.iw-btn-cotton { background: var(--iw-cotton); color: var(--iw-ink); }
+.iw-btn-cotton:hover { background: #fff8ea; }
+.iw-btn-ghost { color: var(--iw-cotton); box-shadow: inset 0 0 0 2px rgba(241, 234, 219, 0.35); }
+.iw-btn-ghost:hover { box-shadow: inset 0 0 0 2px var(--iw-cotton); }
+
+.iw-field {
+  width: 100%; min-width: 0; min-height: 3.4rem; border-radius: 0.75rem;
+  font: 600 1.05rem/1.2 var(--iw-body);
+  padding: 0 2.6rem 0 1rem;
+  appearance: none; -webkit-appearance: none;
+  background-color: #fffaf0;
+  border: 2px solid rgba(14, 23, 69, 0.14);
+  color: var(--iw-ink);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.iw-field:hover { border-color: rgba(14, 23, 69, 0.3); }
+.iw-field:focus { outline: none; border-color: var(--iw-indigo-3); box-shadow: 0 0 0 4px rgba(44, 71, 168, 0.18); }
+select.iw-field {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2314215c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 1rem center;
+  cursor: pointer;
+}
+.iw-field-dark {
+  background-color: rgba(11, 18, 64, 0.55); color: var(--iw-cotton);
+  border-color: rgba(241, 234, 219, 0.22);
+}
+.iw-field-dark::placeholder { color: rgba(201, 211, 242, 0.55); }
+.iw-field-dark:focus { border-color: var(--iw-turmeric); box-shadow: 0 0 0 4px rgba(242, 140, 40, 0.2); }
+
+/* ── Resist-dye map ───────────────────────────────────────── */
+.iw-map-node { cursor: pointer; }
+.iw-map-node .ring { transition: r 600ms var(--iw-ease), opacity 400ms ease; }
+.iw-map-node:hover .ring-outer, .iw-map-node:focus-visible .ring-outer { opacity: 0.9; }
+.iw-map-node:focus-visible { outline: none; }
+.iw-map-node:focus-visible .ring-core { stroke: var(--iw-turmeric); stroke-width: 3; }
+.iw-route-reveal { animation: iw-dye-in 1400ms var(--iw-ease) both; }
+@keyframes iw-dye-in { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.iw-bloom { animation: iw-bloom 1100ms var(--iw-ease) both; transform-box: fill-box; transform-origin: center; }
+@keyframes iw-bloom { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ── Fare board ───────────────────────────────────────────── */
+.iw-fare-row { border-bottom: 1px solid rgba(14, 23, 69, 0.12); }
+.iw-fare-row:hover { background: rgba(255, 250, 240, 0.65); }
+
+/* ── Mobile action bar ────────────────────────────────────── */
+.iw-dock {
+  padding-bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -12px 30px -12px rgba(11, 18, 64, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iw *, .iw *::before, .iw *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Re-dye the booking and tracking pages (still built with Tailwind
+   emerald/slate classes) into the indigo world, inside .skin-indigo.
+   ───────────────────────────────────────────────────────────── */
+.skin-indigo {
+  --color-emerald-50: #eef1fb;
+  --color-emerald-100: #dce3f7;
+  --color-emerald-200: #b9c6ee;
+  --color-emerald-300: #8fa8e8;
+  --color-emerald-400: #5f7bd0;
+  --color-emerald-500: #2c47a8;
+  --color-emerald-600: #23399a;
+  --color-emerald-700: #1b2e7a;
+  --color-emerald-800: #14215c;
+  --color-emerald-900: #0e1745;
+  --color-emerald-950: #0b1240;
+  --color-slate-50: #faf6ee;
+  --color-slate-100: #f1eadb;
+  --color-slate-200: #e6dcc6;
+  font-family: var(--iw-body);
+  background-color: var(--iw-cotton);
+  background-image: var(--iw-slub);
+}
+html.light .skin-indigo .glass-card { background-color: #fffaf0; border-color: rgba(14, 23, 69, 0.12); }
+html.light .skin-indigo input:focus,
+html.light .skin-indigo select:focus { border-color: var(--iw-indigo-3) !important; }
+html.light .skin-indigo input,
+html.light .skin-indigo select { background-color: #fffaf0 !important; border-color: rgba(14, 23, 69, 0.18) !important; }
+.skin-indigo h1, .skin-indigo h2, .skin-indigo h3 { font-family: var(--iw-display); letter-spacing: -0.02em; }
+
+/* Horizontal scrollers (phone map) keep momentum but hide the bar. */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Internal consoles (/rider, /ops): recolour their emerald utility palette to the brand
+   blues from Graphics_logo (deep blue #1B3A6B, mid blue #2C5AA0). */
+.skin-brand {
+  --color-emerald-50: #eef1f6;
+  --color-emerald-100: #dbe4f2;
+  --color-emerald-200: #b8c9e6;
+  --color-emerald-300: #8eaad8;
+  --color-emerald-400: #6f93d0;
+  --color-emerald-500: #3a68b3;
+  --color-emerald-600: #2c5aa0;
+  --color-emerald-700: #244b86;
+  --color-emerald-800: #1b3a6b;
+  --color-emerald-900: #142c52;
+  --color-emerald-950: #0d1d38;
+}

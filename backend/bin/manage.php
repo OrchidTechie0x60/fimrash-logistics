@@ -67,7 +67,7 @@ try {
         case 'set-rider-pin':
             $ref = trim($argv[2] ?? '');
             $phone = Http::normalisePhone($ref) ?? '__none__';
-            $pin = prompt('New PIN (4-8 digits): ');
+            $pin = prompt('New PIN (6-8 digits): ');
             Auth::validatePin($pin);
             $stmt = $db->prepare('UPDATE riders SET pin_hash = ?, active = 1 WHERE id = ? OR phone = ?');
             $stmt->execute([Auth::hashSecret($pin), $ref, $phone]);

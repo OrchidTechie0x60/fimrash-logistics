@@ -28,3 +28,6 @@ full_codebase.txt
 # Backend secrets & local data
 backend/config.php
 backend/storage/
+
+# Impeccable review captures (local only)
+.impeccable/review/

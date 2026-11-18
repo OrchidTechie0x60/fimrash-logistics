@@ -82,8 +82,12 @@ class Auth {
     public static function require(PDO $db, array $roles): array {
         $user = self::currentUser($db);
         if (!$user) {
+            // Probing internal endpoints without a valid token is capped per IP.
+            RateLimiter::hit($db, 'unauth-internal:' . Http::clientIp(), 60, 600);
             throw new HttpException(401, 'Please sign in to continue');
         }
+        // Generous ceiling for real work; stops a leaked token from being used to scrape.
+        RateLimiter::hit($db, 'internal-user:' . $user['role'] . ':' . $user['id'], 600, 600);
         if (!in_array($user['role'], $roles, true)) {
             throw new HttpException(403, 'You do not have access to this action');
         }
@@ -95,10 +99,14 @@ class Auth {
     }
 
     public static function validatePin(string $pin): void {
-        if (!preg_match('/^\d{4,8}$/', $pin)) {
-            throw new HttpException(422, 'PIN must be 4 to 8 digits', ['field' => 'pin']);
+        if (!preg_match('/^\d{6,8}$/', $pin)) {
+            throw new HttpException(422, 'PIN must be 6 to 8 digits', ['field' => 'pin']);
         }
-        if (in_array($pin, ['0000', '1111', '1234', '4321', '123456', '000000', '111111'], true)) {
+        // Reject repeated digits, straight runs and the usual favourites.
+        $ascending = '0123456789012345';
+        $descending = '9876543210987654';
+        if (count(array_unique(str_split($pin))) <= 2 || str_contains($ascending, $pin) || str_contains($descending, $pin)
+            || in_array($pin, ['121212', '112233', '123123', '696969', '159753', '147258', '102030'], true)) {
             throw new HttpException(422, 'That PIN is too easy to guess. Choose another.', ['field' => 'pin']);
         }
     }

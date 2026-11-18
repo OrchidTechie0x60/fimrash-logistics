@@ -610,9 +610,10 @@ function RiderForm({ riderId = null, initial, needsPin = false, onCancel, onSave
       <input
         aria-label="PIN"
         inputMode="numeric"
-        pattern="\d{4,8}"
+        pattern="\d{6,8}"
+        title="6 to 8 digits; avoid repeats and runs like 123456"
         required={!riderId || needsPin}
-        placeholder={riderId && !needsPin ? 'New PIN (leave blank to keep)' : 'PIN (4–8 digits)'}
+        placeholder={riderId && !needsPin ? 'New PIN (leave blank to keep)' : 'PIN (6–8 digits)'}
         value={form.pin}
         onChange={set('pin')}
         className={`${input} font-mono`}

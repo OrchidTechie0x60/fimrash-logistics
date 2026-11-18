@@ -7,10 +7,10 @@ import { saveMyBooking } from '../lib/myBookings';
 import { isNigerianMobile, naira, trackingUrl, whatsappNumber } from '../lib/format';
 import {
   MapPin, Navigation, Package, ShieldCheck, ArrowRight,
-  CheckCircle2, Copy, Phone, MessageSquare, Zap, Store,
+  CheckCircle2, Copy, MessageSquare, Store,
   Compass, ChevronDown, ChevronUp, Home, AlertCircle,
-  Calculator, Search, Truck, Sparkles,
-  Printer, Banknote
+  Calculator, Search, Truck,
+  Printer, Banknote, Cake, Soup, Shirt, Sparkles, Smartphone, FileText
 } from 'lucide-react';
 
 const EMPTY_FORM = {
@@ -33,11 +33,17 @@ const EMPTY_FORM = {
   codAmount: '',
 };
 
-export default function BookingForm({ onNavigateToTracking }) {
+export default function BookingForm({ onNavigateToTracking, initialQuery = {} }) {
   // Top Hero Utility Tab (GIGL-Style: Ship / Track / Fare Calculator)
   const [heroTab, setHeroTab] = useState('ship'); // 'ship' | 'track' | 'quote'
 
-  const [formData, setFormData] = useState(EMPTY_FORM);
+  // Routes chosen on the homepage (map, fare board or CoD link) arrive as ?from=&to=&cod=1.
+  const [formData, setFormData] = useState(() => ({
+    ...EMPTY_FORM,
+    ...(getLandmark(initialQuery.from) ? { senderLandmark: initialQuery.from } : {}),
+    ...(getLandmark(initialQuery.to) ? { recipientLandmark: initialQuery.to } : {}),
+    ...(initialQuery.cod === '1' ? { isCodActive: true } : {}),
+  }));
 
   // Radar Map Target Selector: 'pickup' or 'dropoff'
   const [mapTarget, setMapTarget] = useState('dropoff');
@@ -71,22 +77,22 @@ export default function BookingForm({ onNavigateToTracking }) {
 
   // Categories for Kano: Home Businesses, Markets & Personal Errands
   const CATEGORIES = [
-    { id: 'Cakes, Pastries & Bakes', label: 'Cakes, Pastries & Bakes', icon: '🎂', badge: 'Upright Care' },
-    { id: 'Food & Home Catering', label: 'Cooked Meals & Catering', icon: '🍲', badge: 'Fresh Courier' },
-    { id: 'Fabrics & Fashion', label: 'Fabrics, Abayas & Fashion', icon: '🧵', badge: 'Boutique' },
-    { id: 'Perfumes & Cosmetics', label: 'Perfumes, Oils & Beauty', icon: '✨', badge: 'Fragrance' },
-    { id: 'Phones & Gadgets', label: 'Electronics & Phones', icon: '📱', badge: 'Anti-Theft' },
-    { id: 'Documents & Certificates', label: 'Certificates & Envelopes', icon: '📄', badge: 'Priority' },
-    { id: 'Personal Items & Errands', label: 'Personal Errands & Parcels', icon: '📦', badge: 'Standard' },
+    { id: 'Cakes, Pastries & Bakes', label: 'Cakes, Pastries & Bakes', icon: Cake, badge: 'Upright Care' },
+    { id: 'Food & Home Catering', label: 'Cooked Meals & Catering', icon: Soup, badge: 'Fresh Courier' },
+    { id: 'Fabrics & Fashion', label: 'Fabrics, Abayas & Fashion', icon: Shirt, badge: 'Boutique' },
+    { id: 'Perfumes & Cosmetics', label: 'Perfumes, Oils & Beauty', icon: Sparkles, badge: 'Fragrance' },
+    { id: 'Phones & Gadgets', label: 'Electronics & Phones', icon: Smartphone, badge: 'Anti-Theft' },
+    { id: 'Documents & Certificates', label: 'Certificates & Envelopes', icon: FileText, badge: 'Priority' },
+    { id: 'Personal Items & Errands', label: 'Personal Errands & Parcels', icon: Package, badge: 'Standard' },
   ];
 
   // Popular Kano Corridors (Home Businesses & Markets)
   const POPULAR_PRESETS = [
-    { label: '🎂 Gyadi-Gyadi → Naibawa (Home Baker)', from: 'gyadi-gyadi', to: 'naibawa', category: 'Cakes, Pastries & Bakes' },
-    { label: '🍲 Gyadi-Gyadi → Hotoro GRA (Catering)', from: 'gyadi-gyadi', to: 'hotoro-gra', category: 'Food & Home Catering' },
-    { label: '🧵 Kwari → Nassarawa GRA (Textiles)', from: 'kwari-textiles', to: 'nassarawa-gra', category: 'Fabrics & Fashion' },
-    { label: '📦 Tarauni → BUK Campus (Errand)', from: 'tarauni-gra', to: 'buk-new-campus', category: 'Personal Items & Errands' },
-    { label: '📱 Farm Centre → Zoo Road (Gadgets)', from: 'farm-centre', to: 'zoo-road', category: 'Phones & Gadgets' },
+    { label: 'Gyadi-Gyadi → Naibawa (Home Baker)', from: 'gyadi-gyadi', to: 'naibawa', category: 'Cakes, Pastries & Bakes' },
+    { label: 'Gyadi-Gyadi → Hotoro GRA (Catering)', from: 'gyadi-gyadi', to: 'hotoro-gra', category: 'Food & Home Catering' },
+    { label: 'Kwari → Nassarawa GRA (Textiles)', from: 'kwari-textiles', to: 'nassarawa-gra', category: 'Fabrics & Fashion' },
+    { label: 'Tarauni → BUK Campus (Errand)', from: 'tarauni-gra', to: 'buk-new-campus', category: 'Personal Items & Errands' },
+    { label: 'Farm Centre → Zoo Road (Gadgets)', from: 'farm-centre', to: 'zoo-road', category: 'Phones & Gadgets' },
   ];
 
   // Real, scannable QR on the waybill: it opens the public tracking page.
@@ -194,9 +200,7 @@ export default function BookingForm({ onNavigateToTracking }) {
         <div className="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 print:shadow-none print:border-none print:p-2">
           {/* Top Brand Banner for Print */}
           <div className="text-center pb-4 mb-4 border-b border-dashed border-slate-300 dark:border-slate-700">
-            <span className="text-xs font-mono font-bold tracking-widest text-emerald-600 uppercase">
-              FIMRASH LOGISTICS SERVICES • KANO METROPOLIS
-            </span>
+            <img src="/brand/fimrash-lockup.png" alt="Fimrash Logistics" className="h-12 w-auto mx-auto mb-3" />
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mt-0.5">
               Consignment Dispatch Pass
             </h1>
@@ -299,11 +303,11 @@ export default function BookingForm({ onNavigateToTracking }) {
                   {bookingSuccess.itemDescription} ({bookingSuccess.itemCategory})
                 </span>
                 <span className="text-xs text-slate-500">
-                  {bookingSuccess.paymentMode === 'pay_on_delivery' ? '💵 Courier collects delivery fee from recipient on arrival' : '✅ Delivery fee prepaid by sender'}
+                  {bookingSuccess.paymentMode === 'pay_on_delivery' ? 'Courier collects delivery fee from recipient on arrival' : 'Delivery fee prepaid by sender'}
                 </span>
                 {bookingSuccess.isFragile && (
                   <span className="inline-block mt-1 text-[11px] text-amber-700 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/40">
-                    ⚠️ Fragile / Upright Box Handling Required
+                    Fragile / Upright Box Handling Required
                   </span>
                 )}
               </div>
@@ -377,18 +381,13 @@ export default function BookingForm({ onNavigateToTracking }) {
 
         {/* Corporate Headline & Value Header */}
         <div className="relative z-10 max-w-3xl mb-6 sm:mb-8">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold mb-3">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="tracking-wide uppercase text-[11px] font-bold">Kano Intra-State Express Dispatch Network</span>
-          </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-            Fast, Classic &amp; Reliable <br className="hidden sm:block" />
-            <span className="text-emerald-600 dark:text-emerald-400">Intra-State Logistics</span> Across Kano.
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.02]">
+            Book a pickup
           </h1>
 
           <p className="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
-            On-demand arterial dispatch across all 12 commercial and residential corridors. From home bakeries in Gyadi-Gyadi to wholesale merchants in Kantin Kwari &amp; Singer.
+            Same-day motorcycle courier between Kano landmarks. Fill in both ends, check the flat fare, and you are done.
           </p>
         </div>
 
@@ -491,7 +490,7 @@ export default function BookingForm({ onNavigateToTracking }) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  1. Pickup Corridor (Origin)
+                  Pickup from
                 </label>
                 <select
                   value={calcState.pickup}
@@ -513,7 +512,7 @@ export default function BookingForm({ onNavigateToTracking }) {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  2. Destination Corridor (Drop-off)
+                  Deliver to
                 </label>
                 <select
                   value={calcState.dropoff}
@@ -535,7 +534,7 @@ export default function BookingForm({ onNavigateToTracking }) {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                  3. Parcel Category
+                  Parcel type
                 </label>
                 <select
                   value={calcState.category}
@@ -543,7 +542,7 @@ export default function BookingForm({ onNavigateToTracking }) {
                   className="w-full rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold transition"
                 >
                   {CATEGORIES.map(c => (
-                    <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                    <option key={c.id} value={c.id}>{c.label}</option>
                   ))}
                 </select>
               </div>
@@ -601,9 +600,6 @@ export default function BookingForm({ onNavigateToTracking }) {
           <div className="relative z-10 space-y-6">
             {/* Quick Corridor Presets Bar */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">
-                Popular Runs:
-              </span>
               {POPULAR_PRESETS.map((preset, idx) => (
                 <button
                   key={idx}
@@ -678,7 +674,7 @@ export default function BookingForm({ onNavigateToTracking }) {
                   <div className="flex items-center space-x-2">
                     <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                      1. Pickup Details (Sender / Origin)
+                      Pickup
                     </h2>
                   </div>
 
@@ -778,7 +774,6 @@ export default function BookingForm({ onNavigateToTracking }) {
                     {/* Smart Sub-Landmark Popular Anchor Quick-Chips */}
                     {selectedSenderLandmark?.popularAnchors?.length > 0 && (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className="text-[10px] font-bold uppercase text-slate-400">Anchor:</span>
                         {selectedSenderLandmark.popularAnchors.map((anchor, i) => (
                           <button
                             key={i}
@@ -804,7 +799,7 @@ export default function BookingForm({ onNavigateToTracking }) {
                   <div className="flex items-center space-x-2">
                     <Navigation className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                      2. Delivery Destination (Recipient)
+                      Delivery
                     </h2>
                   </div>
 
@@ -904,7 +899,6 @@ export default function BookingForm({ onNavigateToTracking }) {
                     {/* Smart Sub-Landmark Popular Anchor Quick-Chips */}
                     {selectedRecipientLandmark?.popularAnchors?.length > 0 && (
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className="text-[10px] font-bold uppercase text-slate-400">Anchor:</span>
                         {selectedRecipientLandmark.popularAnchors.map((anchor, i) => (
                           <button
                             key={i}
@@ -929,7 +923,7 @@ export default function BookingForm({ onNavigateToTracking }) {
                 <div className="flex items-center space-x-2 pb-3 border-b border-slate-200 dark:border-slate-800">
                   <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                    3. Parcel Type &amp; Special Handling
+                    Parcel
                   </h2>
                 </div>
 
@@ -958,7 +952,7 @@ export default function BookingForm({ onNavigateToTracking }) {
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-2xl mb-1">{cat.icon}</span>
+                          <cat.icon className="w-6 h-6 mb-1 text-emerald-700 dark:text-emerald-400" aria-hidden="true" />
                           <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                             {cat.badge}
                           </span>
@@ -1005,7 +999,7 @@ export default function BookingForm({ onNavigateToTracking }) {
                 {/* Cake & Food Upright Handling Guarantee */}
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                   <div className="flex items-center space-x-2.5">
-                    <span className="text-lg">🎂</span>
+                    <span className="text-lg"></span>
                     <div>
                       <span className="text-xs font-bold text-slate-900 dark:text-white block">
                         Fragile / Upright Box Dispatch Care
@@ -1150,7 +1144,7 @@ export default function BookingForm({ onNavigateToTracking }) {
               <div className="p-4 sm:p-5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <span className="text-xs uppercase font-bold text-slate-400 block tracking-wider">
-                    Guaranteed Intra-Kano Delivery Rate
+                    Flat delivery fare
                   </span>
                   <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white font-mono flex items-baseline space-x-2 mt-0.5">
                     <span>₦{deliveryFee.toLocaleString()}</span>
@@ -1166,7 +1160,7 @@ export default function BookingForm({ onNavigateToTracking }) {
                     Settlement Method
                   </span>
                   <span className="text-sm font-bold text-slate-900 dark:text-white block mt-1">
-                    {formData.paymentMode === 'pay_on_delivery' ? '💵 Pay on Delivery' : '✅ Prepaid by Sender'}
+                    {formData.paymentMode === 'pay_on_delivery' ? 'Pay on Delivery' : 'Prepaid by Sender'}
                     {formData.isCodActive && ` (+ ₦${parseFloat(formData.codAmount || 0).toLocaleString()} CoD)`}
                   </span>
                 </div>
@@ -1193,111 +1187,6 @@ export default function BookingForm({ onNavigateToTracking }) {
         )}
       </section>
 
-      {/* =========================================================================
-          GIGL-INSPIRED VALUE & TRUST PILLARS (4-Card Enterprise Grid)
-         ========================================================================= */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Why Kano Merchants &amp; Families Rely on Fimrash
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Enterprise logistics engineering tailored specifically for Kano metropolitan commerce.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Pillar 1 */}
-          <div className="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/40 transition-all shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3">
-              <Zap className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-              Under 45-Min Express Transit
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Direct point-to-point motorcycle dispatches across Kano's 12 major corridors with zero hub delays.
-            </p>
-          </div>
-
-          {/* Pillar 2 */}
-          <div className="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/40 transition-all shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-              4-Digit Anti-Theft Handshake
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Private OTP verification prevents parcel theft. Couriers cannot finalize delivery without recipient code.
-            </p>
-          </div>
-
-          {/* Pillar 3 */}
-          <div className="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/40 transition-all shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3">
-              <Home className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-              Home &amp; Market Pickups
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Doorstep pickup for Gyadi-Gyadi home bakers, Naibawa caterers, and wholesale stalls in Kantin Kwari.
-            </p>
-          </div>
-
-          {/* Pillar 4 */}
-          <div className="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/40 transition-all shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-              Flat &amp; Transparent Rates
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Fixed mileage-based pricing from ₦800 with zero surge fees, zero merchant markups, and zero hidden costs.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          GIGL-STYLE CUSTOMER DESK & CORRIDOR DIRECTORY BAR
-         ========================================================================= */}
-      <section className="glass-card rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 print:hidden">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-            <Phone className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-              Need Dispatch Assistance or Commercial Bulk Courier?
-            </h4>
-            <p className="text-[11px] sm:text-xs text-slate-500">
-              Our central dispatch desk is active 7:30 AM – 9:00 PM daily across Kano metropolis.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-2.5 w-full md:w-auto">
-          <a
-            href="tel:08156661246"
-            className="flex-1 md:flex-initial px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition text-center border border-slate-200 dark:border-slate-700"
-          >
-            Call Desk: 0815 666 1246
-          </a>
-          <a
-            href="https://wa.me/2348156661246?text=Hello%20Fimrash%20Logistics%20I%20need%20courier%20dispatch"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 md:flex-initial px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition text-center shadow-xs"
-          >
-            WhatsApp Desk
-          </a>
-        </div>
-      </section>
     </div>
   );
 }
