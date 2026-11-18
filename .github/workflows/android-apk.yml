@@ -1,0 +1,126 @@
+# Builds the Fimrash Android app (Capacitor wrapper around the React frontend) on every push.
+#
+# Outputs
+#   • Every run: the APK as a downloadable artifact on the workflow run page (kept 30 days).
+#   • Pushes to main: the GitHub Release "android-latest" always holds the newest build as fimrash.apk
+#     (stable link: https://github.com/<owner>/<repo>/releases/download/android-latest/fimrash.apk).
+#
+# Repository settings (Settings → Secrets and variables → Actions)
+#   Variables (optional; defaults shown):
+#     VITE_API_BASE_URL    https://fimrash.orchidbyte.com.ng/backend/public
+#     VITE_PUBLIC_APP_URL  https://fimrash-logistics.vercel.app   (used in shared tracking links/QR codes)
+#   Secrets (optional; without them a debug-signed APK is produced, fine for sideloading to riders):
+#     ANDROID_KEYSTORE_BASE64   base64 of your release .jks file
+#     ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+
+name: Android APK
+
+on:
+  push:
+    branches: ['**']
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://fimrash.orchidbyte.com.ng/backend/public' }}
+      VITE_PUBLIC_APP_URL: ${{ vars.VITE_PUBLIC_APP_URL || 'https://fimrash.orchidbyte.com.ng' }}
+      APP_VERSION_CODE: ${{ github.run_number }}
+      APP_VERSION_NAME: 1.0.${{ github.run_number }}
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync web build into the Android project
+        run: npx cap sync android
+
+      - name: Restore release keystore
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: frontend/android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/fimrash.apk"
+
+      - name: Build debug APK
+        if: env.HAS_KEYSTORE != 'true'
+        working-directory: frontend/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/fimrash.apk"
+
+      - name: Name the APK
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          NAME="fimrash-${APP_VERSION_NAME}-${SHORT_SHA}.apk"
+          cp "$RUNNER_TEMP/fimrash.apk" "$RUNNER_TEMP/$NAME"
+          echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APK_NAME }}
+          path: ${{ runner.temp }}/${{ env.APK_NAME }}
+          retention-days: 30
+
+      - name: Move the "android-latest" tag to this commit
+        if: github.ref == 'refs/heads/main'
+        working-directory: .
+        run: |
+          git tag -f android-latest "$GITHUB_SHA"
+          git push -f origin refs/tags/android-latest
+
+      - name: Publish to the "android-latest" release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Fimrash Android (latest)
+          prerelease: false
+          make_latest: true
+          body: |
+            Latest Android build from `${{ github.sha }}` (version ${{ env.APP_VERSION_NAME }}).
+            ${{ env.HAS_KEYSTORE == 'true' && 'Signed with the Fimrash release key.' || 'Debug-signed build: allow "Install unknown apps" to sideload.' }}
+          files: ${{ runner.temp }}/fimrash.apk
