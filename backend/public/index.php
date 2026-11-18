@@ -40,6 +40,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 $id = '([A-Za-z0-9_\-]{1,40})';
 $routes = [
     ['GET',  '#^/(api/)?health$#',                   'health'],
+    ['GET',  '#^/api/pricing$#',                     'pricing'],
+    ['POST', '#^/api/pricing$#',                     'savePricing'],
     ['POST', '#^/api/quote$#',                       'quote'],
     ['POST', '#^/api/auth/login$#',                  'login'],
     ['GET',  '#^/api/auth/me$#',                     'me'],
@@ -54,6 +56,7 @@ $routes = [
     ['POST', "#^/api/deliveries/{$id}/cancel$#",     'cancel'],
     ['POST', "#^/api/deliveries/{$id}/reset-otp$#",  'resetOtp'],
     ['POST', "#^/api/deliveries/{$id}/cod-payout$#", 'codPayout'],
+    ['POST', "#^/api/deliveries/{$id}/fee$#",        'overrideFee'],
     ['POST', '#^/api/rider/availability$#',          'setAvailability'],
     ['GET',  '#^/api/riders$#',                      'listRiders'],
     ['POST', '#^/api/riders$#',                      'saveRider'],

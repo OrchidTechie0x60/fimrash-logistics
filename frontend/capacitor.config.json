@@ -1,0 +1,11 @@
+{
+  "appId": "ng.fimrash.logistics",
+  "appName": "Fimrash",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0b1240"
+  }
+}

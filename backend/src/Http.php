@@ -19,6 +19,8 @@ class Http {
         if (!is_array($allowed)) {
             $allowed = array_map('trim', explode(',', (string) $allowed));
         }
+        // The Fimrash Android app (Capacitor) always calls from these origins.
+        $allowed = array_merge($allowed, ['https://localhost', 'capacitor://localhost']);
 
         if (in_array('*', $allowed, true)) {
             header('Access-Control-Allow-Origin: *');

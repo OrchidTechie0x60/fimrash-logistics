@@ -114,3 +114,27 @@ A 500 error here usually means a wrong DB credential or a missing `app_secret`; 
 
 ## If the API is down
 The site shows clear error messages (booking, tracking and rider actions need the API). Nothing is stored only in the browser, so no data diverges or gets lost; customers can still reach the desk via the call/WhatsApp buttons.
+
+## Staff pages (not linked from the public site)
+
+* Riders: `https://fimrash-logistics.vercel.app/rider` (phone number or bike plate + 6–8 digit PIN).
+* Station staff: `https://fimrash-logistics.vercel.app/ops` (email + password; the first account comes from `bootstrap_admin` in `config.php`).
+* Bookmark them on staff phones. In the Android app, these links appear as "Rider sign-in" / "Station sign-in" at the bottom of the home page.
+
+## Pricing
+
+Fees are calculated by the server from road distance between areas (straight-line distance × 1.35), plus parcel size, fragile handling and cash-on-delivery handling, never below a minimum, and rounded up to ₦100. Set your real rates in **Station Ops → Pricing**; example fares update as you type. To charge a different amount for one job (bulky goods, waiting time, a far "other area"), open the delivery in **Deliveries → Manage → Update fee** and give a reason; the change is logged. Delivered jobs cannot be repriced.
+
+Senders whose area is not listed choose **"Other area"**, type the area name, and pick the closest listed area, which sets the fare and the rider zone.
+
+## Android app (APK)
+
+GitHub Actions builds the app on every push (`.github/workflows/android-apk.yml`).
+
+* **Download:** every run attaches the APK under *Actions → Android APK → (run) → Artifacts*. Pushes to `main` also update the release **android-latest**, so this link always serves the newest build:
+  `https://github.com/OrchidTechie0x60/fimrash-logistics/releases/download/android-latest/fimrash.apk`
+* **Install:** on the phone, open the link, then allow "Install unknown apps" for the browser when prompted.
+* **Which API it uses:** set repository *variables* `VITE_API_BASE_URL` (default `https://fimrash.orchidbyte.com.ng/backend/public`) and `VITE_PUBLIC_APP_URL` (default `https://fimrash-logistics.vercel.app`, used in shared tracking links). The API accepts the app's origin (`https://localhost`) automatically.
+* **Signing:** without secrets the APK is debug-signed, which is fine for sideloading to your riders. For a Play Store–ready, consistently signed build, create a keystore once:
+  `keytool -genkey -v -keystore fimrash-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias fimrash`
+  then add repository *secrets* `ANDROID_KEYSTORE_BASE64` (output of `base64 -w0 fimrash-release.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (`fimrash`) and `ANDROID_KEY_PASSWORD`. Keep the `.jks` file and passwords safe: Android only accepts updates signed with the same key. Note that switching from debug-signed to release-signed builds requires uninstalling the debug app once.

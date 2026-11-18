@@ -7,7 +7,7 @@ namespace Fimrash;
 use PDO;
 
 class Database {
-    private const SCHEMA_VERSION = 2;
+    private const SCHEMA_VERSION = 3;
 
     private static ?PDO $instance = null;
 
@@ -223,5 +223,21 @@ class Database {
         self::createIndex($db, 'idx_events_delivery', 'delivery_events', 'delivery_id');
         self::createIndex($db, 'idx_cash_rider', 'cash_collections', 'rider_id, status');
         self::createIndex($db, 'idx_remit_rider', 'remittances', 'rider_id');
+    }
+
+    // v3: distance-based pricing, parcel size, "other area" locations, admin fee overrides.
+    private static function migration3(PDO $db): void {
+        self::addColumn($db, 'deliveries', 'parcel_size', "VARCHAR(16) NOT NULL DEFAULT 'small'");
+        self::addColumn($db, 'deliveries', 'sender_other_area', 'VARCHAR(128) NULL');
+        self::addColumn($db, 'deliveries', 'recipient_other_area', 'VARCHAR(128) NULL');
+        self::addColumn($db, 'deliveries', 'distance_km', 'DECIMAL(6, 1) NULL');
+        self::addColumn($db, 'deliveries', 'fee_breakdown', 'TEXT NULL');
+        self::addColumn($db, 'deliveries', 'fee_overridden', 'INT NOT NULL DEFAULT 0');
+
+        $db->exec("CREATE TABLE IF NOT EXISTS settings (
+            k VARCHAR(64) PRIMARY KEY,
+            v TEXT NOT NULL,
+            updated_at VARCHAR(32) NOT NULL
+        )");
     }
 }

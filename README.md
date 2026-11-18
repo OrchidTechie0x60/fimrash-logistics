@@ -66,6 +66,8 @@ Open http://localhost:5173/ops, sign in with the bootstrap admin, then add rider
 | Rider | `/rider` | Phone number or bike plate + PIN (set by station staff) |
 | Station staff | `/ops` | Email + password |
 
+The staff pages are not linked from the public site: bookmark `/rider` and `/ops`. The Android app shows them at the bottom of its home page.
+
 Command-line admin tools (run on the server or locally):
 
 ```bash
@@ -82,6 +84,10 @@ php backend/tests/api_test.php      # end-to-end API suite (auth, OTP, state mac
 php backend/tests/fare_parity.php   # fails if frontend and backend fare tables disagree
 cd frontend && npm run lint && npm run build
 ```
+
+## 📱 Android app
+
+`frontend/android` is a Capacitor wrapper around the same React app. GitHub Actions builds an APK on every push; the newest `main` build is always at `releases/download/android-latest/fimrash.apk`. To build locally you need the Android SDK: `cd frontend && npm run build && npx cap sync android && cd android && ./gradlew assembleDebug`.
 
 Deployment: see [DEPLOYMENT_GUIDE_VERCEL_WHOGOHOST.md](DEPLOYMENT_GUIDE_VERCEL_WHOGOHOST.md).
 

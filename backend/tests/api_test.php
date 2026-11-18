@@ -139,10 +139,14 @@ $d1 = $r['json']['delivery'] ?? [];
 check('booking created', $r['status'] === 201, $r);
 check('client-chosen tracking code ignored', ($d1['trackingCode'] ?? '') !== 'FMR-KN-0001' && preg_match('/^FMR-KN-[2-9A-Z]{6}$/', $d1['trackingCode'] ?? ''));
 check('client-chosen id ignored', ($d1['id'] ?? '') !== 'del_hack');
-check('fee is server-calculated (Gyadi-Gyadi→Naibawa = ₦900)', ($d1['deliveryFee'] ?? 0) == 900, $d1['deliveryFee'] ?? null);
+$q = call('POST', '/api/quote', ['pickup_landmark_id' => 'gyadi-gyadi', 'dropoff_landmark_id' => 'naibawa', 'is_fragile' => true, 'cod_amount' => 15000])['json'];
+$fee1 = $d1['deliveryFee'] ?? 0;
+check('fee is server-calculated and matches the public quote', $fee1 == ($q['fee'] ?? -1) && $fee1 >= 1500, ['fee' => $fee1, 'quote' => $q]);
+check('fee is rounded up to the ₦100 step', fmod($fee1, 100) == 0.0, $fee1);
+check('distance and breakdown are recorded', ($d1['distanceKm'] ?? 0) > 0 && isset($d1['feeBreakdown']['distance'], $d1['feeBreakdown']['cod']), $d1['feeBreakdown'] ?? null);
 check('phones normalised', ($d1['senderPhone'] ?? '') === '08035557788' && ($d1['recipientPhone'] ?? '') === '08144445566');
 check('auto-assigned to in-zone rider', ($d1['status'] ?? '') === 'assigned' && ($d1['assignedRider']['id'] ?? '') === $rider1Id, $d1);
-check('amount due = fee + CoD', ($d1['amountDue'] ?? 0) == 15900);
+check('amount due = fee + CoD', ($d1['amountDue'] ?? 0) == $fee1 + 15000);
 $otp1 = $d1['otp'] ?? '';
 check('OTP is 4 digits', (bool) preg_match('/^\d{4}$/', $otp1));
 
@@ -178,11 +182,11 @@ $r = call('POST', "/api/deliveries/{$d1['id']}/verify-otp", ['otp' => $wrong], $
 check('wrong OTP rejected with attempts remaining', $r['status'] === 422 && $r['json']['attemptsRemaining'] === 4, $r);
 $r = call('POST', "/api/deliveries/{$d1['id']}/verify-otp", ['otp' => $otp1], $rider1);
 check('correct OTP completes delivery', $r['status'] === 200 && $r['json']['delivery']['status'] === 'delivered', $r);
-check('cash collected = fee + CoD', ($r['json']['cashCollected'] ?? 0) == 15900);
+check('cash collected = fee + CoD', ($r['json']['cashCollected'] ?? 0) == $fee1 + 15000);
 $r = call('POST', "/api/deliveries/{$d1['id']}/verify-otp", ['otp' => $otp1], $rider1);
 check('replayed OTP does not double-count cash (409)', $r['status'] === 409);
 $r = call('GET', '/api/deliveries', null, $rider1);
-check('rider cash held still ₦15,900', ($r['json']['cashHeld'] ?? 0) == 15900, $r['json']['cashHeld'] ?? null);
+check('rider cash held unchanged after replay', ($r['json']['cashHeld'] ?? 0) == $fee1 + 15000, $r['json']['cashHeld'] ?? null);
 
 echo "\nOTP lockout & reset\n";
 $r = call('POST', '/api/deliveries', booking(['payment_mode' => 'prepaid', 'cod_amount' => 0, 'sender_landmark_id' => 'kwari-textiles', 'recipient_landmark_id' => 'nassarawa-gra']));
@@ -216,11 +220,11 @@ check('cannot cancel a delivered order', call('POST', "/api/deliveries/{$d1['id'
 
 $r = call('GET', '/api/reconciliation', null, $admin);
 $s = $r['json']['summary'] ?? [];
-check('ledger: cash held by riders ₦15,900', ($s['cashHeldByRiders'] ?? 0) == 15900, $s);
+check('ledger: cash held by riders = fee + CoD', ($s['cashHeldByRiders'] ?? 0) == $fee1 + 15000, $s);
 check('ledger: CoD awaiting vendor payout ₦15,000', ($s['codPendingPayout'] ?? 0) == 15000, $s);
-check('ledger: revenue counts delivered fees only (900 + 1000)', ($s['revenue'] ?? 0) == 1900, $s);
+check('ledger: revenue counts delivered fees only', ($s['revenue'] ?? 0) == $fee1 + $d2['deliveryFee'], $s);
 
-$r = call('POST', "/api/riders/$rider1Id/remit", ['received_amount' => 15400, 'note' => 'Short ₦500'], $admin);
+$r = call('POST', "/api/riders/$rider1Id/remit", ['received_amount' => $fee1 + 15000 - 500, 'note' => 'Short ₦500'], $admin);
 check('remit records shortfall', $r['status'] === 200 && $r['json']['remittance']['shortfall'] == 500, $r);
 check('second remit has nothing to collect (409)', call('POST', "/api/riders/$rider1Id/remit", ['received_amount' => 0], $admin)['status'] === 409);
 $s = call('GET', '/api/reconciliation', null, $admin)['json']['summary'];
@@ -230,6 +234,37 @@ check('vendor CoD payout recorded', $r['status'] === 200 && $r['json']['delivery
 check('payout is not repeatable', call('POST', "/api/deliveries/{$d1['id']}/cod-payout", ['reference' => 'again'], $admin)['status'] === 409);
 $s = call('GET', '/api/reconciliation', null, $admin)['json']['summary'];
 check('ledger: CoD pending ₦0, paid ₦15,000', $s['codPendingPayout'] == 0 && $s['codPaidOut'] == 15000, $s);
+
+echo "\nPricing, other areas & fee overrides\n";
+$rates = call('GET', '/api/pricing')['json']['rates'] ?? [];
+check('public rate card is readable', isset($rates['base'], $rates['perKm'], $rates['minimum']), $rates);
+$small = call('POST', '/api/quote', ['pickup_landmark_id' => 'kwari-textiles', 'dropoff_landmark_id' => 'buk-new-campus'])['json'];
+$large = call('POST', '/api/quote', ['pickup_landmark_id' => 'kwari-textiles', 'dropoff_landmark_id' => 'buk-new-campus', 'parcel_size' => 'large'])['json'];
+check('larger parcels cost more', ($large['fee'] ?? 0) > ($small['fee'] ?? 0), [$small, $large]);
+$near = call('POST', '/api/quote', ['pickup_landmark_id' => 'kwari-textiles', 'dropoff_landmark_id' => 'singer-market'])['json'];
+check('short hops pay at least the minimum', ($near['fee'] ?? 0) >= $rates['minimum'], $near);
+check('longer trips cost more than short hops', ($small['fee'] ?? 0) > ($near['fee'] ?? 0));
+check('new areas are bookable (Kumbotso → Airport)', call('POST', '/api/quote', ['pickup_landmark_id' => 'kumbotso', 'dropoff_landmark_id' => 'aminu-kano-airport'])['status'] === 200);
+
+$r = call('POST', '/api/deliveries', booking(['sender_landmark_id' => 'other', 'sender_other_area' => '']));
+check('"other" pickup needs an area name', $r['status'] === 422 && ($r['json']['field'] ?? '') === 'sender_other_area', $r);
+$r = call('POST', '/api/deliveries', booking(['sender_landmark_id' => 'other', 'sender_other_area' => 'Kawo Mai Gari']));
+check('"other" pickup needs the nearest known area', $r['status'] === 422 && ($r['json']['field'] ?? '') === 'sender_near_landmark_id', $r);
+$r = call('POST', '/api/deliveries', booking(['sender_landmark_id' => 'other', 'sender_other_area' => 'Kawo Mai Gari', 'sender_near_landmark_id' => 'bachirawa', 'parcel_size' => 'medium']));
+$d4 = $r['json']['delivery'] ?? [];
+check('"other" pickup books against the nearest area', $r['status'] === 201 && $d4['senderLandmarkId'] === 'bachirawa' && $d4['senderOtherArea'] === 'Kawo Mai Gari' && $d4['parcelSize'] === 'medium', $d4);
+
+$saved = call('POST', '/api/pricing', ['perKm' => 300, 'minimum' => 2000], $admin);
+check('admin updates rates', $saved['status'] === 200 && $saved['json']['rates']['perKm'] == 300, $saved);
+check('riders cannot change rates', call('POST', '/api/pricing', ['perKm' => 1], $rider1)['status'] === 403);
+check('out-of-range rate rejected', call('POST', '/api/pricing', ['perKm' => -5], $admin)['status'] === 422);
+$after = call('POST', '/api/quote', ['pickup_landmark_id' => 'kwari-textiles', 'dropoff_landmark_id' => 'buk-new-campus'])['json'];
+check('quotes follow the new rates', ($after['fee'] ?? 0) > ($small['fee'] ?? 0), [$small, $after]);
+
+$r = call('POST', "/api/deliveries/{$d4['id']}/fee", ['fee' => 7500, 'reason' => 'Two cartons, extra trip'], $admin);
+check('admin overrides a fee before delivery', $r['status'] === 200 && $r['json']['delivery']['deliveryFee'] == 7500 && $r['json']['delivery']['feeOverridden'] === true, $r);
+check('override needs a reason', call('POST', "/api/deliveries/{$d4['id']}/fee", ['fee' => 8000, 'reason' => ''], $admin)['status'] === 422);
+check('delivered fees are locked', call('POST', "/api/deliveries/{$d1['id']}/fee", ['fee' => 100, 'reason' => 'x'], $admin)['status'] === 409);
 
 echo "\nRevocation & rate limiting\n";
 call('POST', "/api/riders/$rider2Id", ['active' => false], $admin);

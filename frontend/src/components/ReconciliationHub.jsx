@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Wallet, Store, TrendingUp, Package, RefreshCw, Search, ShieldCheck, Users, Banknote, AlertTriangle, Lock, UserPlus,
+  Wallet, Store, TrendingUp, Package, RefreshCw, Search, ShieldCheck, Users, Banknote, AlertTriangle, Lock, UserPlus, Calculator,
 } from 'lucide-react';
 import {
   assignDelivery, cancelDelivery, getReconciliation, listDeliveries, listRiders, markCodPaid, remitRiderCash,
-  resetDeliveryOtp, saveRider,
+  resetDeliveryOtp, saveRider, savePricing, overrideDeliveryFee,
 } from '../services/api';
+import { DEFAULT_RATES, quote, setCachedRates, usePricingRates } from '../lib/pricing';
 import { getLandmark, KANO_ZONES } from '../data/kanoLandmarks';
 import { dateTimeOf, naira, statusLabel } from '../lib/format';
 
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'deliveries', label: 'Deliveries', icon: Package },
   { id: 'cash', label: 'Cash & CoD', icon: Banknote },
   { id: 'fleet', label: 'Fleet', icon: Users },
+  { id: 'pricing', label: 'Pricing', icon: Calculator },
 ];
 
 const FILTERS = [
@@ -113,7 +115,7 @@ export default function ReconciliationHub() {
           </div>
         )}
 
-        <div className="mt-6 flex gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 max-w-md">
+        <div className="mt-6 flex gap-1.5 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 max-w-xl overflow-x-auto">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -132,6 +134,7 @@ export default function ReconciliationHub() {
       {tab === 'deliveries' && <DeliveriesPanel riders={riders} onChanged={refreshLedger} />}
       {tab === 'cash' && <CashPanel riders={riders} remittances={remittances} onChanged={refreshLedger} />}
       {tab === 'fleet' && <FleetPanel riders={riders} onChanged={refreshLedger} />}
+      {tab === 'pricing' && <PricingPanel />}
     </div>
   );
 }
@@ -287,6 +290,8 @@ function DeliveryActions({ delivery: d, riders, onUpdated }) {
   const [reason, setReason] = useState('');
   const [reference, setReference] = useState('');
   const [newOtp, setNewOtp] = useState(null);
+  const [newFee, setNewFee] = useState(String(d.deliveryFee));
+  const [feeReason, setFeeReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -311,15 +316,20 @@ function DeliveryActions({ delivery: d, riders, onUpdated }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-600 dark:text-slate-300">
         <div>
           <span className="text-[10px] uppercase font-bold text-slate-400 block">Pickup</span>
+          {d.senderOtherArea && <strong className="block">{d.senderOtherArea} (near {getLandmark(d.senderLandmarkId)?.name})</strong>}
           {d.senderDetail} · {d.senderPhone}
         </div>
         <div>
           <span className="text-[10px] uppercase font-bold text-slate-400 block">Drop-off</span>
+          {d.recipientOtherArea && <strong className="block">{d.recipientOtherArea} (near {getLandmark(d.recipientLandmarkId)?.name})</strong>}
           {d.recipientDetail} · {d.recipientPhone}
         </div>
         <div className="sm:col-span-2">
           <span className="text-[10px] uppercase font-bold text-slate-400 block">Parcel</span>
-          {d.itemDescription} ({d.itemCategory}){d.specialInstructions ? ` — ${d.specialInstructions}` : ''}
+          {d.itemDescription} ({d.itemCategory}, {d.parcelSize || 'small'}){d.specialInstructions ? ` — ${d.specialInstructions}` : ''}
+          <span className="block text-slate-500">
+            Fee {naira(d.deliveryFee)}{d.distanceKm ? ` · ~${d.distanceKm} km` : ''}{d.feeOverridden ? ' · set by staff' : ''}
+          </span>
           {d.cancelReason && <span className="block text-rose-600">Cancelled: {d.cancelReason}</span>}
           {d.codPayoutReference && <span className="block text-emerald-600">Vendor paid {dateTimeOf(d.codPaidAt)} · ref {d.codPayoutReference}</span>}
         </div>
@@ -383,6 +393,20 @@ function DeliveryActions({ delivery: d, riders, onUpdated }) {
             className={`${input} w-60`}
           />
           <button type="submit" className={btnPrimary} disabled={busy}>Mark {naira(d.codAmount)} paid to {d.senderName}</button>
+        </form>
+      )}
+
+      {open && (
+        <form
+          className="flex flex-wrap items-center gap-2"
+          onSubmit={(e) => { e.preventDefault(); run(async () => onUpdated(await overrideDeliveryFee(d.id, Number(newFee), feeReason.trim()))); }}
+        >
+          <label className="text-xs text-slate-500 flex items-center gap-2">
+            Set fee ₦
+            <input type="number" min="100" step="50" required aria-label="New fee" value={newFee} onChange={(e) => setNewFee(e.target.value)} className={`${input} w-28 font-mono`} />
+          </label>
+          <input required aria-label="Reason for fee change" value={feeReason} onChange={(e) => setFeeReason(e.target.value)} placeholder="Reason (e.g. two cartons, far area)" className={`${input} w-60`} />
+          <button type="submit" className={btnGhost} disabled={busy}>Update fee</button>
         </form>
       )}
 
@@ -628,5 +652,110 @@ function RiderForm({ riderId = null, initial, needsPin = false, onCancel, onSave
         <ErrorNote message={error} />
       </div>
     </form>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pricing: the rate card behind every quote. Examples update as you type.
+// ─────────────────────────────────────────────────────────────
+const RATE_FIELDS = [
+  ['base', 'Base fee per job (₦)', 'Covers pickup and handling on every job.'],
+  ['perKm', 'Per road km (₦)', 'Fuel, time and wear for each kilometre.'],
+  ['minimum', 'Minimum fee (₦)', 'No job is cheaper than this.'],
+  ['rounding', 'Round up to (₦)', 'Fees round up to this step, e.g. 100.'],
+  ['sizeSmall', 'Small parcel extra (₦)', 'Envelope, phone, small pack.'],
+  ['sizeMedium', 'Medium parcel extra (₦)', 'Cake box, shoe box, small bag.'],
+  ['sizeLarge', 'Large parcel extra (₦)', 'Carton or bulk bag.'],
+  ['fragile', 'Fragile handling extra (₦)', 'Cakes, glass, upright items.'],
+  ['codPercent', 'Cash-on-delivery handling (%)', 'Of the item price the rider collects.'],
+  ['codMinimum', 'Minimum CoD handling (₦)', 'Floor for the CoD handling fee.'],
+];
+
+const EXAMPLES = [
+  ['gyadi-gyadi', 'naibawa', 'small', false, 0],
+  ['kwari-textiles', 'nassarawa-gra', 'medium', false, 0],
+  ['yankatako', 'kwari-textiles', 'medium', true, 15000],
+  ['buk-new-campus', 'aminu-kano-airport', 'large', false, 0],
+];
+
+function PricingPanel() {
+  const live = usePricingRates();
+  const [form, setForm] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [saved, setSaved] = useState(false);
+  const values = form || live;
+  const rates = Object.fromEntries(Object.keys(DEFAULT_RATES).map((k) => [k, Number(values[k] ?? DEFAULT_RATES[k])]));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const next = await savePricing(rates);
+      setCachedRates(next);
+      setForm(next);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="glass-card rounded-2xl p-5 sm:p-7 shadow-sm space-y-6">
+      <div>
+        <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Rate card</h2>
+        <p className="text-xs text-slate-500 max-w-2xl">
+          Every booking is priced as base + per-km × road distance + parcel size + fragile + cash-on-delivery handling,
+          never below the minimum, rounded up. Changes apply to new bookings immediately; existing bookings keep their fee
+          (use "Update fee" on a delivery to change one).
+        </p>
+      </div>
+
+      <form onSubmit={submit} className="grid lg:grid-cols-[1fr_minmax(0,22rem)] gap-6">
+        <div className="grid sm:grid-cols-2 gap-4">
+          {RATE_FIELDS.map(([key, label, hint]) => (
+            <label key={key} className="block">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">{label}</span>
+              <input
+                type="number"
+                min="0"
+                step={key === 'codPercent' ? '0.1' : '1'}
+                required
+                value={values[key] ?? ''}
+                onChange={(e) => setForm({ ...values, [key]: e.target.value })}
+                className={`${input} w-full font-mono`}
+              />
+              <span className="text-[11px] text-slate-500">{hint}</span>
+            </label>
+          ))}
+          <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
+            <button type="submit" className={btnPrimary} disabled={busy}>{busy ? 'Saving…' : 'Save rates'}</button>
+            {form && <button type="button" className={btnGhost} onClick={() => setForm(null)}>Discard changes</button>}
+            {saved && <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Saved. New bookings use these rates.</span>}
+            <ErrorNote message={error} />
+          </div>
+        </div>
+
+        <div className={`${card} space-y-3 self-start`}>
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Example fares with these rates</span>
+          {EXAMPLES.map(([from, to, size, fragile, cod]) => {
+            const q = quote(rates, from, to, { size, fragile, cod });
+            return (
+              <div key={`${from}-${to}`} className="flex items-start justify-between gap-3 text-xs">
+                <span className="text-slate-600 dark:text-slate-300">
+                  {getLandmark(from)?.name.split(' (')[0]} → {getLandmark(to)?.name.split(' (')[0]}
+                  <span className="block text-slate-400">~{q.km} km · {size}{fragile ? ', fragile' : ''}{cod ? `, CoD ${naira(cod)}` : ''}</span>
+                </span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">{naira(q.fee)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </form>
+    </div>
   );
 }

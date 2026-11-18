@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Fimrash</string>
+    <string name="title_activity_main">Fimrash</string>
+    <string name="package_name">ng.fimrash.logistics</string>
+    <string name="custom_url_scheme">ng.fimrash.logistics</string>
+</resources>

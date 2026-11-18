@@ -265,7 +265,7 @@ export default function RiderConsole({ currentUser, onUserChange }) {
               )}
             </div>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1">
-              Kaya: <strong className="text-slate-900 dark:text-white">{currentDelivery.itemDescription}</strong> ({currentDelivery.itemCategory})
+              Kaya: <strong className="text-slate-900 dark:text-white">{currentDelivery.itemDescription}</strong> ({currentDelivery.itemCategory}, {currentDelivery.parcelSize || 'small'})
             </p>
             {currentDelivery.specialInstructions && (
               <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">Note: {currentDelivery.specialInstructions}</p>
@@ -278,7 +278,9 @@ export default function RiderConsole({ currentUser, onUserChange }) {
                 <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Wajen Karɓa (Pickup)</span>
               </span>
-              <span className="font-bold text-slate-900 dark:text-white block text-sm">{senderLandmark?.name}</span>
+              <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                {currentDelivery.senderOtherArea ? `${currentDelivery.senderOtherArea} (near ${senderLandmark?.name})` : senderLandmark?.name}
+              </span>
               <span className="text-slate-600 dark:text-slate-300 block text-xs">{currentDelivery.senderDetail}</span>
               <span className="text-slate-400 text-[11px] block">Mai aikawa: {currentDelivery.senderName}</span>
               <a href={`tel:${currentDelivery.senderPhone}`} className="inline-flex items-center space-x-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline pt-1">
@@ -292,7 +294,9 @@ export default function RiderConsole({ currentUser, onUserChange }) {
                 <Navigation className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                 <span>Wajen Kaiwa (Drop-off)</span>
               </span>
-              <span className="font-bold text-slate-900 dark:text-white block text-sm">{recipientLandmark?.name}</span>
+              <span className="font-bold text-slate-900 dark:text-white block text-sm">
+                {currentDelivery.recipientOtherArea ? `${currentDelivery.recipientOtherArea} (near ${recipientLandmark?.name})` : recipientLandmark?.name}
+              </span>
               <span className="text-slate-600 dark:text-slate-300 block text-xs">{currentDelivery.recipientDetail}</span>
               <span className="text-slate-400 text-[11px] block">Mai karɓa: {currentDelivery.recipientName}</span>
               <a href={`tel:${currentDelivery.recipientPhone}`} className="inline-flex items-center space-x-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400 hover:underline pt-1">

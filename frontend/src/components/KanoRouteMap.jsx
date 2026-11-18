@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Compass } from 'lucide-react';
-import { MAP_NODES } from '../data/kanoMap';
+import { MAP_NODES, visibleNodes } from '../data/kanoMap';
 import { useI18n } from '../i18n';
 
 export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelectLandmark, activeRiderName = null }) {
@@ -97,7 +97,7 @@ export default function KanoRouteMap({ pickupLandmark, dropoffLandmark, onSelect
           </g>
 
           {/* All Landmark Nodes */}
-          {MAP_NODES.map((node) => {
+          {visibleNodes(pNode.id, dNode.id).map((node) => {
             const isPickup = node.id === pNode.id;
             const isDropoff = node.id === dNode.id;
             const isHovered = hoveredNode?.id === node.id;

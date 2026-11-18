@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { KANO_LANDMARKS, calculateDeliveryFare, calculateRouteMetrics, getLandmark } from '../data/kanoLandmarks';
+import { KANO_LANDMARKS, KANO_ZONES, OTHER_AREA, getLandmark } from '../data/kanoLandmarks';
+import { PARCEL_SIZES, quote, usePricingRates } from '../lib/pricing';
 import KanoRouteMap from './KanoRouteMap';
 import { createDelivery } from '../services/api';
+import { OFFICE_ADDRESS } from '../lib/business';
 import { saveMyBooking } from '../lib/myBookings';
 import { isNigerianMobile, naira, trackingUrl, whatsappNumber } from '../lib/format';
 import {
@@ -18,15 +20,20 @@ const EMPTY_FORM = {
   senderName: '',
   senderPhone: '',
   senderLandmark: 'gyadi-gyadi',
+  senderOtherArea: '',
+  senderNearLandmark: 'gyadi-gyadi',
   senderDetail: '',
   recipientType: 'home',
   recipientName: '',
   recipientPhone: '',
   recipientLandmark: 'naibawa',
+  recipientOtherArea: '',
+  recipientNearLandmark: 'naibawa',
   recipientDetail: '',
   itemCategory: 'Cakes, Pastries & Bakes',
   itemDescription: '',
   isFragile: true,
+  parcelSize: 'medium', // small | medium | large
   deliveryNote: '',
   paymentMode: 'pay_on_delivery', // 'pay_on_delivery' or 'prepaid'
   isCodActive: false, // Optional Merchant Cash-on-Delivery
@@ -40,8 +47,8 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
   // Routes chosen on the homepage (map, fare board or CoD link) arrive as ?from=&to=&cod=1.
   const [formData, setFormData] = useState(() => ({
     ...EMPTY_FORM,
-    ...(getLandmark(initialQuery.from) ? { senderLandmark: initialQuery.from } : {}),
-    ...(getLandmark(initialQuery.to) ? { recipientLandmark: initialQuery.to } : {}),
+    ...(getLandmark(initialQuery.from) || initialQuery.from === OTHER_AREA ? { senderLandmark: initialQuery.from } : {}),
+    ...(getLandmark(initialQuery.to) || initialQuery.to === OTHER_AREA ? { recipientLandmark: initialQuery.to } : {}),
     ...(initialQuery.cod === '1' ? { isCodActive: true } : {}),
   }));
 
@@ -65,15 +72,22 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
-  const selectedSenderLandmark = getLandmark(formData.senderLandmark) || KANO_LANDMARKS[5];
-  const selectedRecipientLandmark = getLandmark(formData.recipientLandmark) || KANO_LANDMARKS[8];
+  // "Other area" prices and routes from the nearest known area the sender picked.
+  const effectiveSender = formData.senderLandmark === OTHER_AREA ? formData.senderNearLandmark : formData.senderLandmark;
+  const effectiveRecipient = formData.recipientLandmark === OTHER_AREA ? formData.recipientNearLandmark : formData.recipientLandmark;
+  const selectedSenderLandmark = getLandmark(effectiveSender) || KANO_LANDMARKS[5];
+  const selectedRecipientLandmark = getLandmark(effectiveRecipient) || KANO_LANDMARKS[8];
 
-  const deliveryFee = calculateDeliveryFare(formData.senderLandmark, formData.recipientLandmark);
-  const routeMetrics = calculateRouteMetrics(formData.senderLandmark, formData.recipientLandmark);
+  const rates = usePricingRates();
+  const codValue = formData.isCodActive ? Math.max(0, Number(formData.codAmount || 0)) : 0;
+  const fareQuote = quote(rates, effectiveSender, effectiveRecipient, { size: formData.parcelSize, fragile: formData.isFragile, cod: codValue });
+  const deliveryFee = fareQuote.fee;
+  const routeMetrics = { distanceKm: fareQuote.km, estMinutes: fareQuote.minutes };
 
   // Dedicated Calculator Metrics
-  const calcFare = calculateDeliveryFare(calcState.pickup, calcState.dropoff);
-  const calcMetrics = calculateRouteMetrics(calcState.pickup, calcState.dropoff);
+  const calcQuote = quote(rates, calcState.pickup, calcState.dropoff, { size: calcState.size || 'small' });
+  const calcFare = calcQuote.fee;
+  const calcMetrics = { distanceKm: calcQuote.km, estMinutes: calcQuote.minutes, corridor: `${getLandmark(calcState.pickup)?.name.split(' (')[0]} → ${getLandmark(calcState.dropoff)?.name.split(' (')[0]}` };
 
   // Categories for Kano: Home Businesses, Markets & Personal Errands
   const CATEGORIES = [
@@ -143,6 +157,8 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
     if (!isNigerianMobile(formData.senderPhone)) return 'Enter a valid sender phone number (e.g. 08031234567).';
     if (!isNigerianMobile(formData.recipientPhone)) return 'Enter a valid recipient phone number (e.g. 08031234567).';
     if (formData.isCodActive && !(Number(formData.codAmount) > 0)) return 'Enter the item price to collect, or switch off Cash-on-Delivery.';
+    if (formData.senderLandmark === OTHER_AREA && !formData.senderOtherArea.trim()) return 'Type the name of the pickup area.';
+    if (formData.recipientLandmark === OTHER_AREA && !formData.recipientOtherArea.trim()) return 'Type the name of the delivery area.';
     return null;
   };
 
@@ -205,7 +221,7 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
               Consignment Dispatch Pass
             </h1>
             <p className="text-[11px] text-slate-500">
-              Kano Intra-State Same-Day Express Network • Dispatch Desk: 0815 666 1246
+              {OFFICE_ADDRESS} • Dispatch desk: 0815 666 1246
             </p>
           </div>
 
@@ -497,16 +513,7 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
                   onChange={(e) => setCalcState({ ...calcState, pickup: e.target.value })}
                   className="w-full rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold transition"
                 >
-                  <optgroup label="Residential & Home Enterprise">
-                    {KANO_LANDMARKS.filter(l => l.type === 'residential').map((l) => (
-                      <option key={l.id} value={l.id}>{l.name} ({l.hausaName})</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Markets & Commercial Plazas">
-                    {KANO_LANDMARKS.filter(l => l.type !== 'residential').map((l) => (
-                      <option key={l.id} value={l.id}>{l.name} ({l.hausaName})</option>
-                    ))}
-                  </optgroup>
+                  <ZoneOptions />
                 </select>
               </div>
 
@@ -519,16 +526,7 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
                   onChange={(e) => setCalcState({ ...calcState, dropoff: e.target.value })}
                   className="w-full rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold transition"
                 >
-                  <optgroup label="Residential, GRAs & Campuses">
-                    {KANO_LANDMARKS.filter(l => l.type === 'residential' || l.type === 'campus').map((l) => (
-                      <option key={l.id} value={l.id}>{l.name} ({l.hausaName})</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Markets & Commercial Hubs">
-                    {KANO_LANDMARKS.filter(l => l.type !== 'residential' && l.type !== 'campus').map((l) => (
-                      <option key={l.id} value={l.id}>{l.name} ({l.hausaName})</option>
-                    ))}
-                  </optgroup>
+                  <ZoneOptions />
                 </select>
               </div>
 
@@ -579,7 +577,7 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
             {/* Direct Book CTA */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
               <span className="text-xs text-slate-500">
-                Flat corridor rate with zero surge fees. Includes a private 4-digit handover code.
+                Priced by road distance, parcel size and handling. No surge. Includes a private 4-digit handover code.
               </span>
               <button
                 type="button"
@@ -738,24 +736,9 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
 
                   <div>
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
-                      Pickup Area / Corridor Landmark *
+                      Pickup area *
                     </label>
-                    <select
-                      value={formData.senderLandmark}
-                      onChange={(e) => setFormData({ ...formData, senderLandmark: e.target.value })}
-                      className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold transition"
-                    >
-                      <optgroup label="Residential & Home Enterprise Hubs">
-                        {KANO_LANDMARKS.filter(l => l.type === 'residential').map((l) => (
-                          <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="Commercial Markets & Tech Plazas">
-                        {KANO_LANDMARKS.filter(l => l.type !== 'residential').map((l) => (
-                          <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
-                        ))}
-                      </optgroup>
-                    </select>
+                    <AreaPicker side="sender" formData={formData} setFormData={setFormData} />
                   </div>
 
                   <div>
@@ -863,24 +846,9 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
 
                   <div>
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
-                      Destination Area / Landmark *
+                      Delivery area *
                     </label>
-                    <select
-                      value={formData.recipientLandmark}
-                      onChange={(e) => setFormData({ ...formData, recipientLandmark: e.target.value })}
-                      className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold transition"
-                    >
-                      <optgroup label="Residential Areas, GRAs & Campuses">
-                        {KANO_LANDMARKS.filter(l => l.type === 'residential' || l.type === 'campus').map((l) => (
-                          <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
-                        ))}
-                      </optgroup>
-                      <optgroup label="Markets & Commercial Plazas">
-                        {KANO_LANDMARKS.filter(l => l.type !== 'residential' && l.type !== 'campus').map((l) => (
-                          <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
-                        ))}
-                      </optgroup>
-                    </select>
+                    <AreaPicker side="recipient" formData={formData} setFormData={setFormData} />
                   </div>
 
                   <div>
@@ -993,6 +961,40 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
                       onChange={(e) => setFormData({ ...formData, deliveryNote: e.target.value })}
                       className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base transition"
                     />
+                  </div>
+                </div>
+
+                {/* Parcel size: drives the size surcharge */}
+                <div>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Parcel size</span>
+                  <div role="radiogroup" aria-label="Parcel size" className="grid grid-cols-3 gap-2.5">
+                    {PARCEL_SIZES.map((size) => {
+                      const info = {
+                        small: ['Small', 'Envelope, phone, small pack'],
+                        medium: ['Medium', 'Cake box, shoe box, small bag'],
+                        large: ['Large', 'Carton or bulk bag'],
+                      }[size];
+                      const extra = rates[`size${size[0].toUpperCase()}${size.slice(1)}`];
+                      const active = formData.parcelSize === size;
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setFormData({ ...formData, parcelSize: size })}
+                          className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                            active
+                              ? 'bg-emerald-50 border-emerald-600 dark:bg-emerald-950/40 dark:border-emerald-500'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                          }`}
+                        >
+                          <span className="block text-sm font-bold text-slate-900 dark:text-white">{info[0]}</span>
+                          <span className="block text-[11px] text-slate-500 mt-0.5">{info[1]}</span>
+                          <span className="block text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 mt-1">{extra ? `+₦${extra.toLocaleString()}` : 'No extra'}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1144,13 +1146,16 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
               <div className="p-4 sm:p-5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <span className="text-xs uppercase font-bold text-slate-400 block tracking-wider">
-                    Flat delivery fare
+                    Delivery fee
                   </span>
                   <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white font-mono flex items-baseline space-x-2 mt-0.5">
                     <span>₦{deliveryFee.toLocaleString()}</span>
-                    <span className="text-xs font-sans font-semibold text-emerald-600 dark:text-emerald-400">Fixed Rate</span>
+                    <span className="text-xs font-sans font-semibold text-emerald-600 dark:text-emerald-400">~{routeMetrics.distanceKm} km</span>
                   </div>
                   <span className="text-xs text-slate-500 block mt-0.5">
+                    {fareQuote.breakdown.size + fareQuote.breakdown.fragile + fareQuote.breakdown.cod > 0 && (
+                      <span className="block">Includes {[fareQuote.breakdown.size && `₦${fareQuote.breakdown.size.toLocaleString()} size`, fareQuote.breakdown.fragile && `₦${fareQuote.breakdown.fragile.toLocaleString()} fragile`, fareQuote.breakdown.cod && `₦${fareQuote.breakdown.cod.toLocaleString()} CoD handling`].filter(Boolean).join(', ')}</span>
+                    )}
                     Route: {selectedSenderLandmark.name.split(' ')[0]} → {selectedRecipientLandmark.name.split(' ')[0]} (~{routeMetrics.distanceKm} km • ~{routeMetrics.estMinutes} mins)
                   </span>
                 </div>
@@ -1187,6 +1192,68 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
         )}
       </section>
 
+    </div>
+  );
+}
+
+// Areas grouped by zone, shared by every area dropdown on this page.
+function ZoneOptions() {
+  return KANO_ZONES.map((z) => (
+    <optgroup key={z.id} label={z.name}>
+      {KANO_LANDMARKS.filter((l) => l.zoneId === z.id).map((l) => (
+        <option key={l.id} value={l.id}>{l.name} — {l.hausaName}</option>
+      ))}
+    </optgroup>
+  ));
+}
+
+// Known area, or "Other area": the sender types the area and picks the nearest known one,
+// which sets the fare, the rider's zone and the map route.
+function AreaPicker({ side, formData, setFormData }) {
+  const key = `${side}Landmark`;
+  const otherKey = `${side}OtherArea`;
+  const nearKey = `${side}NearLandmark`;
+  const isOther = formData[key] === OTHER_AREA;
+  const label = side === 'sender' ? 'pickup' : 'delivery';
+  return (
+    <div className="space-y-2.5">
+      <select
+        value={formData[key]}
+        onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+        className="w-full rounded-xl px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold transition"
+      >
+        <ZoneOptions />
+        <optgroup label="Not listed?">
+          <option value={OTHER_AREA}>Other area: I'll type it</option>
+        </optgroup>
+      </select>
+      {isOther && (
+        <div className="grid gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+          <label className="block">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">Name of the {label} area *</span>
+            <input
+              type="text"
+              required
+              maxLength={128}
+              value={formData[otherKey]}
+              onChange={(e) => setFormData({ ...formData, [otherKey]: e.target.value })}
+              placeholder="e.g. Kawo Mai Gari, Rangaza, Tudun Murtala"
+              className="w-full rounded-xl px-4 py-3 text-sm sm:text-base transition"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">Closest listed area (sets the fare) *</span>
+            <select
+              value={formData[nearKey]}
+              onChange={(e) => setFormData({ ...formData, [nearKey]: e.target.value })}
+              className="w-full rounded-xl px-4 py-3 text-sm sm:text-base font-semibold transition"
+            >
+              <ZoneOptions />
+            </select>
+          </label>
+          <p className="text-[11px] text-slate-500">The desk may adjust the fee if the area is far from the one you pick.</p>
+        </div>
+      )}
     </div>
   );
 }

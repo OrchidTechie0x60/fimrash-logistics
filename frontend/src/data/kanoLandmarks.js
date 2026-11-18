@@ -37,6 +37,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'kwari-textiles',
     zoneId: 'Z1_CENTRAL',
+    lat: 12.0035,
+    lng: 8.5225,
     name: 'Kantin Kwari Textile Market',
     hausaName: 'Kasuwar Kantin Kwari',
     type: 'market',
@@ -46,6 +48,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'singer-market',
     zoneId: 'Z1_CENTRAL',
+    lat: 12.0075,
+    lng: 8.5215,
     name: 'Singer Wholesale Market',
     hausaName: 'Kasuwar Singer',
     type: 'market',
@@ -55,6 +59,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'sabon-gari',
     zoneId: 'Z1_CENTRAL',
+    lat: 12.012,
+    lng: 8.534,
     name: 'Sabon Gari Market',
     hausaName: 'Kasuwar Sabon Gari',
     type: 'market',
@@ -64,6 +70,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'kofar-wambai',
     zoneId: 'Z1_CENTRAL',
+    lat: 11.9985,
+    lng: 8.512,
     name: 'Kofar Wambai Market',
     hausaName: 'Kasuwar Kofar Wambai',
     type: 'market',
@@ -73,6 +81,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'bata-fagge',
     zoneId: 'Z1_CENTRAL',
+    lat: 12.009,
+    lng: 8.53,
     name: 'Bata / Fagge Commercial Axis',
     hausaName: 'Fagge / Bata',
     type: 'commercial',
@@ -84,6 +94,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'gyadi-gyadi',
     zoneId: 'Z2_COMMERCIAL_RESIDENTIAL',
+    lat: 11.969,
+    lng: 8.533,
     name: 'Gyadi-Gyadi (Court Road / Zaria Bypass)',
     hausaName: 'Gyadi-Gyadi / Titin Kotu',
     type: 'residential',
@@ -99,6 +111,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'farm-centre',
     zoneId: 'Z2_COMMERCIAL_RESIDENTIAL',
+    lat: 11.976,
+    lng: 8.542,
     name: 'Farm Centre GSM Village',
     hausaName: 'Kasuwar Wayoyi (Farm Centre)',
     type: 'commercial',
@@ -108,6 +122,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'zoo-road',
     zoneId: 'Z2_COMMERCIAL_RESIDENTIAL',
+    lat: 11.978,
+    lng: 8.526,
     name: 'Zoo Road Commercial & Residential Corridor',
     hausaName: 'Hanyar Gidan Zoo',
     type: 'commercial',
@@ -117,6 +133,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'post-office-murtala',
     zoneId: 'Z2_COMMERCIAL_RESIDENTIAL',
+    lat: 11.995,
+    lng: 8.537,
     name: 'Murtala Muhammad Way / Post Office',
     hausaName: 'Hanyar Murtala',
     type: 'commercial',
@@ -128,6 +146,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'naibawa',
     zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.933,
+    lng: 8.542,
     name: 'Naibawa (Yan Lemo / Flyover / Residential)',
     hausaName: 'Naibawa / Tashar Yan Lemo',
     type: 'residential',
@@ -143,6 +163,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'nassarawa-gra',
     zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 12.001,
+    lng: 8.547,
     name: 'Nassarawa GRA',
     hausaName: 'G.R.A Nassarawa',
     type: 'residential',
@@ -152,6 +174,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'hotoro-gra',
     zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.99,
+    lng: 8.57,
     name: 'Hotoro (Hotoro GRA / NNPC Mega / Housing)',
     hausaName: 'Hotoro / Gidan Mai NNPC',
     type: 'residential',
@@ -161,6 +185,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'tarauni-gra',
     zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.962,
+    lng: 8.55,
     name: 'Tarauni Residential & Market Axis',
     hausaName: 'Tarauni / Kasuwa',
     type: 'residential',
@@ -170,6 +196,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'janbulo-dorayi',
     zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.973,
+    lng: 8.48,
     name: 'Janbulo / Dorayi Residential Axis',
     hausaName: 'Janbulo / Dorayi',
     type: 'residential',
@@ -179,6 +207,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'buk-new-campus',
     zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.977,
+    lng: 8.428,
     name: 'BUK New Campus (Gwarzo Road)',
     hausaName: 'Jami\'ar Bayero (Sabuwar Haraba)',
     type: 'campus',
@@ -188,6 +218,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'buk-old-campus',
     zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.984,
+    lng: 8.473,
     name: 'BUK Old Campus (Kabuga / BUK Rd)',
     hausaName: 'Jami\'ar Bayero (Tsohuwar Haraba)',
     type: 'campus',
@@ -199,6 +231,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'rijiyar-zaki',
     zoneId: 'Z4_OUTER_RING',
+    lat: 11.98,
+    lng: 8.44,
     name: 'Rijiyar Zaki (Gwarzo Road Axis)',
     hausaName: 'Rijiyar Zaki',
     type: 'residential',
@@ -208,6 +242,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'kurna-rijiyar-lemo',
     zoneId: 'Z4_OUTER_RING',
+    lat: 12.03,
+    lng: 8.495,
     name: 'Kurna / Rijiyar Lemo (Katsina Road)',
     hausaName: 'Kurna / Rijiyar Lemo',
     type: 'residential',
@@ -217,6 +253,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'sharada-industrial',
     zoneId: 'Z4_OUTER_RING',
+    lat: 11.96,
+    lng: 8.495,
     name: 'Sharada Industrial Estate (Phase 1 & 2)',
     hausaName: 'Masana\'antar Sharada',
     type: 'industrial',
@@ -226,6 +264,8 @@ export const KANO_LANDMARKS = [
   {
     id: 'dawanau-market',
     zoneId: 'Z4_OUTER_RING',
+    lat: 12.07,
+    lng: 8.47,
     name: 'Dawanau International Grains Market',
     hausaName: 'Kasuwar Dawanau',
     type: 'market',
@@ -235,129 +275,238 @@ export const KANO_LANDMARKS = [
   {
     id: 'unguwa-uku',
     zoneId: 'Z4_OUTER_RING',
+    lat: 11.95,
+    lng: 8.53,
     name: 'Unguwa Uku Motor Park & Axis',
     hausaName: 'Tashar Unguwa Uku',
     type: 'commercial',
     popularAnchors: ['Zaria Road flyover', 'Inter-state Luxury bus park', 'Yan Awaki cattle link'],
     category: 'Logistics Hub & Transit'
+  },
+  {
+    id: 'kurmi-market',
+    zoneId: 'Z1_CENTRAL',
+    lat: 11.9975,
+    lng: 8.506,
+    name: 'Kurmi Market (Old City)',
+    hausaName: 'Kasuwar Kurmi',
+    type: 'market',
+    popularAnchors: ['Main gate', 'Leather & crafts section', 'Kofar Kudu road'],
+    category: 'Crafts & General Goods'
+  },
+  {
+    id: 'gidan-sarki',
+    zoneId: 'Z1_CENTRAL',
+    lat: 11.9935,
+    lng: 8.5175,
+    name: 'Emir\'s Palace / Kofar Kudu',
+    hausaName: 'Gidan Sarki',
+    type: 'commercial',
+    popularAnchors: ['Kofar Kudu', 'Central Mosque', 'Kano Museum'],
+    category: 'Old City'
+  },
+  {
+    id: 'kofar-mata',
+    zoneId: 'Z1_CENTRAL',
+    lat: 11.9905,
+    lng: 8.5065,
+    name: 'Kofar Mata (Dye Pits)',
+    hausaName: 'Kofar Mata',
+    type: 'commercial',
+    popularAnchors: ['Dye pits', 'Kofar Mata stadium', 'Kofar Mata junction'],
+    category: 'Old City'
+  },
+  {
+    id: 'gwammaja',
+    zoneId: 'Z1_CENTRAL',
+    lat: 12.006,
+    lng: 8.505,
+    name: 'Gwammaja',
+    hausaName: 'Gwammaja',
+    type: 'residential',
+    popularAnchors: ['Gwammaja mosque', 'Dala road'],
+    category: 'Old City Residential'
+  },
+  {
+    id: 'dala',
+    zoneId: 'Z1_CENTRAL',
+    lat: 12.0015,
+    lng: 8.4975,
+    name: 'Dala / Dala Hill',
+    hausaName: 'Dutsen Dala',
+    type: 'residential',
+    popularAnchors: ['Dala hill', 'Dala market', 'Kofar Dawanau road'],
+    category: 'Old City Residential'
+  },
+  {
+    id: 'bompai',
+    zoneId: 'Z2_COMMERCIAL_RESIDENTIAL',
+    lat: 12.02,
+    lng: 8.55,
+    name: 'Bompai (Police HQ / Industrial)',
+    hausaName: 'Bompai',
+    type: 'commercial',
+    popularAnchors: ['Police HQ', 'Bompai industrial road', 'Airport road'],
+    category: 'Industrial & Offices'
+  },
+  {
+    id: 'gadon-kaya',
+    zoneId: 'Z2_COMMERCIAL_RESIDENTIAL',
+    lat: 11.977,
+    lng: 8.506,
+    name: 'Gadon Kaya',
+    hausaName: 'Gadon Kaya',
+    type: 'residential',
+    popularAnchors: ['Gadon Kaya roundabout', 'Gadon Kaya market'],
+    category: 'Residential'
+  },
+  {
+    id: 'kofar-nassarawa',
+    zoneId: 'Z2_COMMERCIAL_RESIDENTIAL',
+    lat: 11.99,
+    lng: 8.528,
+    name: 'Kofar Nassarawa',
+    hausaName: 'Kofar Nassarawa',
+    type: 'commercial',
+    popularAnchors: ['Kofar Nassarawa gate', 'State Road'],
+    category: 'Commercial'
+  },
+  {
+    id: 'yankatako',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.926,
+    lng: 8.545,
+    name: 'Naibawa Yankatako (Fimrash office)',
+    hausaName: 'Yankatako',
+    type: 'residential',
+    popularAnchors: ['Fimrash office: Plot 124, Shop 3', 'Off Zaria Road', 'Yankatako market'],
+    category: 'Residential'
+  },
+  {
+    id: 'badawa',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 12.02,
+    lng: 8.565,
+    name: 'Badawa',
+    hausaName: 'Badawa',
+    type: 'residential',
+    popularAnchors: ['Badawa layout', 'Badawa market'],
+    category: 'Residential'
+  },
+  {
+    id: 'dakata',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 12.04,
+    lng: 8.57,
+    name: 'Dakata',
+    hausaName: 'Dakata',
+    type: 'residential',
+    popularAnchors: ['Dakata market', 'Kawaji road'],
+    category: 'Residential'
+  },
+  {
+    id: 'gwale',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.985,
+    lng: 8.497,
+    name: 'Gwale',
+    hausaName: 'Gwale',
+    type: 'residential',
+    popularAnchors: ['Gwale LGA secretariat', 'Gwale market'],
+    category: 'Residential'
+  },
+  {
+    id: 'sheka',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.955,
+    lng: 8.5,
+    name: 'Sheka',
+    hausaName: 'Sheka',
+    type: 'residential',
+    popularAnchors: ['Sheka roundabout', 'Sheka market'],
+    category: 'Residential'
+  },
+  {
+    id: 'mariri',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.94,
+    lng: 8.565,
+    name: 'Mariri',
+    hausaName: 'Mariri',
+    type: 'residential',
+    popularAnchors: ['Mariri bypass', 'Mariri market'],
+    category: 'Residential'
+  },
+  {
+    id: 'panshekara',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.935,
+    lng: 8.48,
+    name: 'Panshekara',
+    hausaName: 'Panshekara',
+    type: 'residential',
+    popularAnchors: ['Panshekara market', 'Madobi road'],
+    category: 'Residential'
+  },
+  {
+    id: 'jaen',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 11.98,
+    lng: 8.485,
+    name: 'Ja\'en',
+    hausaName: 'Ja\'en',
+    type: 'residential',
+    popularAnchors: ['Ja\'en junction', 'Gwarzo road'],
+    category: 'Residential'
+  },
+  {
+    id: 'bachirawa',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 12.025,
+    lng: 8.505,
+    name: 'Bachirawa',
+    hausaName: 'Bachirawa',
+    type: 'residential',
+    popularAnchors: ['Bachirawa market', 'Katsina road'],
+    category: 'Residential'
+  },
+  {
+    id: 'aminu-kano-airport',
+    zoneId: 'Z3_RESIDENTIAL_METRO',
+    lat: 12.0476,
+    lng: 8.5246,
+    name: 'Mallam Aminu Kano Airport',
+    hausaName: 'Filin Jirgin Sama',
+    type: 'commercial',
+    popularAnchors: ['Departure gate', 'Cargo terminal', 'Airport road'],
+    category: 'Transport Hub'
+  },
+  {
+    id: 'challawa',
+    zoneId: 'Z4_OUTER_RING',
+    lat: 11.9,
+    lng: 8.48,
+    name: 'Challawa Industrial Estate',
+    hausaName: 'Challawa',
+    type: 'commercial',
+    popularAnchors: ['Industrial estate gate', 'Challawa road'],
+    category: 'Industrial'
+  },
+  {
+    id: 'kumbotso',
+    zoneId: 'Z4_OUTER_RING',
+    lat: 11.89,
+    lng: 8.505,
+    name: 'Kumbotso',
+    hausaName: 'Kumbotso',
+    type: 'residential',
+    popularAnchors: ['Kumbotso LGA secretariat', 'Zaria road'],
+    category: 'Residential'
   }
 ];
 
 export const getLandmark = (id) => KANO_LANDMARKS.find(l => l.id === id) || null;
 
-// Fare calculation algorithm for Kano intra-state.
-// Display-only estimate: the server (backend/src/Pricing.php) is authoritative and
-// backend/tests/fare_parity.php fails if the two ever disagree.
-export function calculateDeliveryFare(pickupLandmarkId, dropoffLandmarkId) {
-  const pickup = KANO_LANDMARKS.find(l => l.id === pickupLandmarkId);
-  const dropoff = KANO_LANDMARKS.find(l => l.id === dropoffLandmarkId);
-
-  if (!pickup || !dropoff) return 1000;
-
-  // Same landmark or immediate neighborhood
-  if (pickup.id === dropoff.id) return 600;
-
-  // Neighboring residential corridors (e.g. Gyadi-Gyadi <-> Naibawa, or Tarauni <-> Hotoro)
-  const isCloseResidentialPair = 
-    (pickup.id === 'gyadi-gyadi' && dropoff.id === 'naibawa') ||
-    (pickup.id === 'naibawa' && dropoff.id === 'gyadi-gyadi') ||
-    (pickup.id === 'tarauni-gra' && dropoff.id === 'hotoro-gra') ||
-    (pickup.id === 'hotoro-gra' && dropoff.id === 'tarauni-gra') ||
-    (pickup.id === 'gyadi-gyadi' && dropoff.id === 'tarauni-gra') ||
-    (pickup.id === 'tarauni-gra' && dropoff.id === 'gyadi-gyadi') ||
-    (pickup.id === 'farm-centre' && dropoff.id === 'gyadi-gyadi') ||
-    (pickup.id === 'gyadi-gyadi' && dropoff.id === 'farm-centre');
-
-  if (isCloseResidentialPair) {
-    return 900; // Flat ₦900 for immediate neighborhood home deliveries!
-  }
-
-  // Same zone
-  if (pickup.zoneId === dropoff.zoneId) {
-    if (pickup.zoneId === 'Z1_CENTRAL') return 800;
-    if (pickup.zoneId === 'Z2_COMMERCIAL_RESIDENTIAL') return 900;
-    if (pickup.zoneId === 'Z3_RESIDENTIAL_METRO') return 1000;
-    return 1200;
-  }
-
-  // Cross-zone pricing matrix
-  const zoneWeights = {
-    'Z1_CENTRAL': 1.0,
-    'Z2_COMMERCIAL_RESIDENTIAL': 1.1,
-    'Z3_RESIDENTIAL_METRO': 1.3,
-    'Z4_OUTER_RING': 1.7
-  };
-
-  const pWeight = zoneWeights[pickup.zoneId] || 1;
-  const dWeight = zoneWeights[dropoff.zoneId] || 1;
-  const combined = (pWeight + dWeight) / 2;
-
-  // Base fee rounded to nearest 50 Naira
-  const estimated = Math.round((850 * combined) / 50) * 50;
-  return Math.max(800, Math.min(2200, estimated));
-}
-
-// Route distance & transit time estimator for Kano corridors
-export function calculateRouteMetrics(pickupLandmarkId, dropoffLandmarkId) {
-  const pickup = KANO_LANDMARKS.find(l => l.id === pickupLandmarkId);
-  const dropoff = KANO_LANDMARKS.find(l => l.id === dropoffLandmarkId);
-
-  if (!pickup || !dropoff) {
-    return { distanceKm: 4.5, estMinutes: 25, corridor: 'Metropolitan Direct' };
-  }
-
-  if (pickup.id === dropoff.id) {
-    return { distanceKm: 1.2, estMinutes: 12, corridor: 'Local Neighborhood' };
-  }
-
-  const key = `${pickup.id}_${dropoff.id}`;
-  const reverseKey = `${dropoff.id}_${pickup.id}`;
-
-  const customMatrix = {
-    'gyadi-gyadi_naibawa': { km: 4.2, mins: 22, corridor: 'Zaria Road Corridor' },
-    'gyadi-gyadi_hotoro-gra': { km: 6.8, mins: 28, corridor: 'Maiduguri Road Bypass' },
-    'gyadi-gyadi_tarauni-gra': { km: 3.1, mins: 15, corridor: 'Court Road / Tarauni' },
-    'kwari-textiles_nassarawa-gra': { km: 5.4, mins: 25, corridor: 'State Road Arterial' },
-    'farm-centre_zoo-road': { km: 3.8, mins: 18, corridor: 'Trade Fair Complex Link' },
-    'tarauni-gra_buk-new-campus': { km: 11.2, mins: 40, corridor: 'BUK Road Expressway' },
-    'singer-market_zoo-road': { km: 4.9, mins: 24, corridor: 'Ibrahim Taiwo Arterial' },
-    'sabon-gari_buk-new-campus': { km: 13.5, mins: 45, corridor: 'Katsina / BUK Link' },
-    'kwari-textiles_farm-centre': { km: 4.6, mins: 22, corridor: 'Bata / Post Office Rd' },
-    'hotoro-gra_naibawa': { km: 5.2, mins: 25, corridor: 'Eastern Ring Road Link' },
-  };
-
-  if (customMatrix[key]) {
-    return {
-      distanceKm: customMatrix[key].km,
-      estMinutes: customMatrix[key].mins,
-      corridor: customMatrix[key].corridor
-    };
-  }
-  if (customMatrix[reverseKey]) {
-    return {
-      distanceKm: customMatrix[reverseKey].km,
-      estMinutes: customMatrix[reverseKey].mins,
-      corridor: customMatrix[reverseKey].corridor
-    };
-  }
-
-  // Zone distance approximation
-  let km = 5.5;
-  let mins = 30;
-  if (pickup.zoneId === dropoff.zoneId) {
-    km = 3.6;
-    mins = 20;
-  } else if (pickup.zoneId === 'Z4_OUTER_RING' || dropoff.zoneId === 'Z4_OUTER_RING') {
-    km = 12.8;
-    mins = 48;
-  } else {
-    km = 7.5;
-    mins = 35;
-  }
-
-  return {
-    distanceKm: km,
-    estMinutes: mins,
-    corridor: `${pickup.name.split(' ')[0]} ⇄ ${dropoff.name.split(' ')[0]} Axis`
-  };
-}
+// Pricing lives in lib/pricing.js (mirrors backend/src/Pricing.php).
+// "Other area" bookings pick the nearest known area for pricing; OTHER_AREA is its select value.
+export const OTHER_AREA = 'other';

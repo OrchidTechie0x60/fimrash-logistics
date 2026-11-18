@@ -1,5 +1,5 @@
 import React, { useId, useMemo } from 'react';
-import { MAP_NODES } from '../../data/kanoMap';
+import { MAP_NODES, visibleNodes } from '../../data/kanoMap';
 
 // Kano's landmarks as tie-resist rings on indigo cloth. The chosen route "dyes in" as an
 // undyed running stitch. Pointer-only enhancement: the selects beside it are the accessible control.
@@ -30,7 +30,7 @@ function nearestThreads(nodes) {
 
 export default function ResistMap({ fromId, toId, onPick }) {
   const uid = useId().replace(/:/g, '');
-  const threads = useMemo(() => nearestThreads(MAP_NODES), []);
+  const threads = useMemo(() => nearestThreads(MAP_NODES.filter((n) => n.hub !== false)), []);
   const from = MAP_NODES.find((n) => n.id === fromId);
   const to = MAP_NODES.find((n) => n.id === toId);
 
@@ -99,7 +99,7 @@ export default function ResistMap({ fromId, toId, onPick }) {
       )}
 
       {/* Landmark rings */}
-      {MAP_NODES.map((n) => {
+      {visibleNodes(fromId, toId).map((n) => {
         const isFrom = n.id === fromId;
         const isTo = n.id === toId;
         const chosen = isFrom || isTo;

@@ -24,7 +24,10 @@ Kano-native, landmark-first dispatch: pickups and drop-offs are chosen by the la
 - Human fallback: dispatch desk 0815 666 1246 (call and WhatsApp), 7:30 AM – 9:00 PM daily.
 
 ## Capabilities and Constraints
-- 21 landmarks in 4 zones; fares ₦600–₦2,200 computed by the server.
+- 41 areas in 4 zones, plus "Other area" (typed by the sender, priced from the nearest listed area).
+- Fares are distance-based and computed by the server: base + per-km × road km + parcel size + fragile + CoD handling, with a minimum and ₦100 rounding. Admins set the rates in Station Ops → Pricing and can override a single job's fee with a logged reason. The starting rates (₦800 base, ₦220/km, ₦1,500 minimum) are placeholders until the business confirms its own.
+- Office: Plot No. 124, Shop No. 3, Naibawa Yankatako, Off Zaria Road, Kumbotso LGA, Kano State.
+- Android app: Capacitor wrapper built by GitHub Actions on every push.
 - No live GPS (map is an approximate landmark route). No online payment yet. No customer accounts.
 - Frontend: React 19 + Vite + Tailwind 4 on Vercel; API: plain PHP on Whogohost.
 - Rider and ops consoles must not be linked from public navigation; reachable by URL only.

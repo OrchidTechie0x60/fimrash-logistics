@@ -1,5 +1,8 @@
 // Approximate schematic positions of the 21 landmarks on a 600x380 grid (north at top).
 // Shared by the route map and the homepage resist-dye map. Not GPS coordinates.
+// hub: false areas were placed by fitting the hubs' positions to real coordinates; maps show them
+// only when they are the chosen pickup or drop-off, so the map stays readable.
+export const visibleNodes = (fromId, toId) => MAP_NODES.filter((n) => n.hub !== false || n.id === fromId || n.id === toId);
 export const MAP_NODES = [
   { id: 'dawanau-market', name: 'Dawanau', label: 'Dawanau Grains', x: 120, y: 50, zone: 'Zone 4' },
   { id: 'buk-new-campus', name: 'BUK New', label: 'BUK New Campus', x: 90, y: 150, zone: 'Zone 3' },
@@ -21,5 +24,25 @@ export const MAP_NODES = [
   { id: 'hotoro-gra', name: 'Hotoro', label: 'Hotoro GRA / NNPC', x: 530, y: 270, zone: 'Zone 3' },
   { id: 'kofar-wambai', name: 'K. Wambai', label: 'Kofar Wambai Market', x: 285, y: 185, zone: 'Zone 1' },
   { id: 'bata-fagge', name: 'Bata', label: 'Bata / Fagge Axis', x: 355, y: 150, zone: 'Zone 1' },
-  { id: 'unguwa-uku', name: 'Unguwa Uku', label: 'Unguwa Uku / Zaria Rd Park', x: 320, y: 350, zone: 'Zone 4' }
+  { id: 'unguwa-uku', name: 'Unguwa Uku', label: 'Unguwa Uku / Zaria Rd Park', x: 320, y: 350, zone: 'Zone 4' },
+  { id: 'kurmi-market', name: "Kurmi", label: "Kurmi Market (Old City)", x: 282, y: 181, zone: 'Zone 1', hub: false },
+  { id: 'gidan-sarki', name: "Emir Palace", label: "Emir's Palace / Kofar Kudu", x: 319, y: 198, zone: 'Zone 1', hub: false },
+  { id: 'kofar-mata', name: "Kofar Mata", label: "Kofar Mata (Dye Pits)", x: 284, y: 198, zone: 'Zone 1', hub: false },
+  { id: 'gwammaja', name: "Gwammaja", label: "Gwammaja", x: 278, y: 159, zone: 'Zone 1', hub: false },
+  { id: 'dala', name: "Dala", label: "Dala / Dala Hill", x: 254, y: 166, zone: 'Zone 1', hub: false },
+  { id: 'bompai', name: "Bompai", label: "Bompai (Police HQ / Industrial)", x: 424, y: 153, zone: 'Zone 2', hub: false },
+  { id: 'gadon-kaya', name: "Gadon Kaya", label: "Gadon Kaya", x: 283, y: 231, zone: 'Zone 2', hub: false },
+  { id: 'kofar-nassarawa', name: "Kofar Nassarawa", label: "Kofar Nassarawa", x: 354, y: 213, zone: 'Zone 2', hub: false },
+  { id: 'yankatako', name: "Yankatako", label: "Naibawa Yankatako (Fimrash office)", x: 413, y: 376, zone: 'Zone 3', hub: false },
+  { id: 'badawa', name: "Badawa", label: "Badawa", x: 473, y: 162, zone: 'Zone 3', hub: false },
+  { id: 'dakata', name: "Dakata", label: "Dakata", x: 489, y: 117, zone: 'Zone 3', hub: false },
+  { id: 'gwale', name: "Gwale", label: "Gwale", x: 253, y: 206, zone: 'Zone 3', hub: false },
+  { id: 'sheka', name: "Sheka", label: "Sheka", x: 264, y: 281, zone: 'Zone 3', hub: false },
+  { id: 'mariri', name: "Mariri", label: "Mariri", x: 477, y: 357, zone: 'Zone 3', hub: false },
+  { id: 'panshekara', name: "Panshekara", label: "Panshekara", x: 200, y: 317, zone: 'Zone 3', hub: false },
+  { id: 'jaen', name: "Ja'en", label: "Ja'en", x: 214, y: 210, zone: 'Zone 3', hub: false },
+  { id: 'bachirawa', name: "Bachirawa", label: "Bachirawa", x: 277, y: 113, zone: 'Zone 3', hub: false },
+  { id: 'aminu-kano-airport', name: "Airport", label: "Mallam Aminu Kano Airport", x: 340, y: 70, zone: 'Zone 3', hub: false },
+  { id: 'challawa', name: "Challawa", label: "Challawa Industrial Estate", x: 201, y: 376, zone: 'Zone 4', hub: false },
+  { id: 'kumbotso', name: "Kumbotso", label: "Kumbotso", x: 284, y: 376, zone: 'Zone 4', hub: false },
 ];

@@ -38,4 +38,6 @@ export const isNigerianMobile = (phone) => {
   return /^0[789][01]\d{8}$/.test(digits);
 };
 
-export const trackingUrl = (code) => `${window.location.origin}/track/${code}`;
+// The Android app runs at https://localhost, so shared links use the public site address.
+const PUBLIC_APP_URL = (import.meta.env.VITE_PUBLIC_APP_URL || window.location.origin).replace(/\/+$/, '');
+export const trackingUrl = (code) => `${PUBLIC_APP_URL}/track/${code}`;

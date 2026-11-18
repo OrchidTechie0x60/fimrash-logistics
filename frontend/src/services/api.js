@@ -88,6 +88,7 @@ export const changeSecret = (current, next) => request('POST', '/api/auth/change
 
 // ── Public ──────────────────────────────────────────────────────
 export const checkHealth = () => request('GET', '/api/health');
+export const getPricing = () => request('GET', '/api/pricing').then((d) => d.rates);
 export const trackDelivery = (code) =>
   request('GET', `/api/track/${encodeURIComponent(code.trim().toUpperCase())}`).then((d) => d.delivery);
 
@@ -97,15 +98,20 @@ export const createDelivery = (form) =>
     sender_name: form.senderName,
     sender_phone: form.senderPhone,
     sender_landmark_id: form.senderLandmark,
+    sender_other_area: form.senderOtherArea,
+    sender_near_landmark_id: form.senderNearLandmark,
     sender_landmark_detail: form.senderDetail,
     recipient_type: form.recipientType,
     recipient_name: form.recipientName,
     recipient_phone: form.recipientPhone,
     recipient_landmark_id: form.recipientLandmark,
+    recipient_other_area: form.recipientOtherArea,
+    recipient_near_landmark_id: form.recipientNearLandmark,
     recipient_landmark_detail: form.recipientDetail,
     item_category: form.itemCategory,
     item_description: form.itemDescription,
     is_fragile: form.isFragile,
+    parcel_size: form.parcelSize,
     special_instructions: form.deliveryNote,
     payment_mode: form.paymentMode,
     cod_amount: form.isCodActive ? Number(form.codAmount || 0) : 0,
@@ -136,3 +142,6 @@ export const saveRider = (rider, id = null) =>
 export const remitRiderCash = (riderId, receivedAmount, note = '') =>
   request('POST', `/api/riders/${riderId}/remit`, { received_amount: receivedAmount, note }).then((d) => d.remittance);
 export const getReconciliation = () => request('GET', '/api/reconciliation');
+export const savePricing = (rates) => request('POST', '/api/pricing', rates).then((d) => d.rates);
+export const overrideDeliveryFee = (id, fee, reason) =>
+  request('POST', `/api/deliveries/${id}/fee`, { fee, reason }).then((d) => d.delivery);

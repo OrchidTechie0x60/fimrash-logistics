@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, ArrowUpDown, Search, Package, Bike, KeyRound, Eye, EyeOff, Phone, MessageCircle, Banknote, MoveHorizontal } from 'lucide-react';
+import { ArrowRight, ArrowUpDown, Search, Package, Bike, KeyRound, Eye, EyeOff, Phone, MessageCircle, Banknote, MoveHorizontal, MapPin } from 'lucide-react';
 import { MAP_NODES } from '../../data/kanoMap';
 import ResistMap from './ResistMap';
 import Stitch from './Stitch';
 import { useI18n } from '../../i18n';
-import { KANO_LANDMARKS, KANO_ZONES, calculateDeliveryFare, calculateRouteMetrics, getLandmark } from '../../data/kanoLandmarks';
+import { KANO_LANDMARKS, KANO_ZONES, getLandmark } from '../../data/kanoLandmarks';
+import { quote, usePricingRates } from '../../lib/pricing';
+import { OFFICE_ADDRESS } from '../../lib/business';
 import { hrefFor, linkHandler, navigate } from '../../lib/router';
 
 const naira = (n) => `₦${Number(n).toLocaleString('en-NG')}`;
@@ -62,8 +64,10 @@ export default function Landing() {
   const [boardFrom, setBoardFrom] = useState('kwari-textiles');
   const mapScroller = useRef(null);
 
-  const fare = calculateDeliveryFare(fromId, toId);
-  const eta = calculateRouteMetrics(fromId, toId).estMinutes;
+  const rates = usePricingRates();
+  const heroQuote = quote(rates, fromId, toId);
+  const fare = heroQuote.fee;
+  const eta = heroQuote.minutes;
 
   // Phones show the map at legible scale inside a horizontal scroller, opened on the chosen route.
   useEffect(() => {
@@ -142,6 +146,13 @@ export default function Landing() {
                   <ArrowRight className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
+              <a
+                href={hrefFor('booking', null, { from: 'other', to: toId })}
+                onClick={linkHandler('booking', null, { from: 'other', to: toId })}
+                className="relative inline-block text-sm font-semibold text-[var(--iw-indigo-3)] underline underline-offset-4 decoration-[rgba(44,71,168,0.4)] hover:decoration-[var(--iw-indigo-3)]"
+              >
+                {t('hero.notListed')}
+              </a>
             </form>
           </div>
 
@@ -291,8 +302,9 @@ export default function Landing() {
                 <ul>
                   {KANO_LANDMARKS.filter((l) => l.zoneId === z.id).map((l) => {
                     const same = l.id === boardFrom;
-                    const price = calculateDeliveryFare(boardFrom, l.id);
-                    const mins = calculateRouteMetrics(boardFrom, l.id).estMinutes;
+                    const q = quote(rates, boardFrom, l.id);
+                    const price = q.fee;
+                    const mins = q.minutes;
                     return (
                       <li key={l.id} className="iw-fare-row flex items-center gap-3 py-3 px-1 rounded-md">
                         <div className="flex-1 min-w-0">
@@ -345,6 +357,10 @@ export default function Landing() {
             <h2 className="iw-h2 text-[var(--iw-ink)]">{t('desk.title')}</h2>
             <p className="iw-lede text-[var(--iw-ink-soft)]">{t('desk.body')}</p>
             <p className="font-bold text-[var(--iw-ink)]">{t('desk.hours')}</p>
+            <p className="flex items-start gap-2 text-[var(--iw-ink-soft)] max-w-lg pt-2">
+              <MapPin className="w-5 h-5 shrink-0 mt-0.5 text-[var(--iw-indigo-3)]" aria-hidden="true" />
+              <span><strong className="text-[var(--iw-ink)]">{t('desk.office')}</strong> {OFFICE_ADDRESS}</span>
+            </p>
           </div>
           <div className="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col gap-3">
             <a href="tel:08156661246" className="iw-btn iw-btn-primary iw-num">

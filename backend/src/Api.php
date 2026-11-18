@@ -40,25 +40,79 @@ class Api {
         ]);
     }
 
+    // Public rate card: the frontend prices live with the same formula the server enforces.
+    public function pricing(): void {
+        Http::json(['rates' => Pricing::rates($this->db), 'roadFactor' => Pricing::ROAD_FACTOR]);
+    }
+
     public function quote(): void {
-        $input = Http::input();
-        $pickup = (string) ($input['pickup_landmark_id'] ?? '');
-        $dropoff = (string) ($input['dropoff_landmark_id'] ?? '');
-        Http::json(['deliveryFee' => Pricing::fare($pickup, $dropoff)]);
+        $in = Http::input();
+        Http::json(Pricing::quote(
+            Pricing::rates($this->db),
+            (string) ($in['pickup_landmark_id'] ?? ''),
+            (string) ($in['dropoff_landmark_id'] ?? ''),
+            (string) ($in['parcel_size'] ?? 'small'),
+            !empty($in['is_fragile']),
+            Http::money($in, 'cod_amount', 5_000_000)
+        ));
+    }
+
+    public function savePricing(): void {
+        $admin = Auth::require($this->db, ['admin']);
+        $rates = Pricing::saveRates($this->db, Http::input());
+        error_log("[Fimrash pricing] rates updated by {$admin['id']}: " . json_encode($rates));
+        Http::json(['rates' => $rates]);
+    }
+
+    // Station staff can set a job's fee by hand (bulky goods, waiting time, outside the metro...).
+    public function overrideFee(string $id): void {
+        $admin = Auth::require($this->db, ['admin']);
+        $in = Http::input();
+        $fee = Http::money($in, 'fee', 500_000);
+        if ($fee < 100) {
+            throw new HttpException(422, 'Fee must be at least ₦100', ['field' => 'fee']);
+        }
+        $reason = Http::text($in, 'reason', 255, true, 'Reason');
+        $row = $this->findDelivery($id);
+        $stmt = $this->db->prepare("UPDATE deliveries SET delivery_fee = ?, fee_overridden = 1, updated_at = ? WHERE id = ? AND status NOT IN ('delivered', 'cancelled')");
+        $stmt->execute([$fee, Database::now(), $id]);
+        if ($stmt->rowCount() !== 1) {
+            throw new HttpException(409, 'Fees can only be changed before delivery');
+        }
+        $this->logEvent($id, 'fee_changed', 'admin', $admin['id'], 'Fee ₦' . number_format((float) $row['delivery_fee']) . ' to ₦' . number_format($fee) . ': ' . $reason);
+        Http::json(['delivery' => $this->formatFull($this->findDelivery($id))]);
+    }
+
+    // A pickup/drop-off is a known landmark, or "other": free-text area plus the nearest known
+    // area, which drives pricing, rider zone and the map.
+    private function resolveLocation(array $in, string $side): array {
+        $label = $side === 'sender' ? 'pickup' : 'drop-off';
+        $id = (string) ($in["{$side}_landmark_id"] ?? '');
+        if ($id === 'other') {
+            $area = Http::text($in, "{$side}_other_area", 128, true, ucfirst($label) . ' area name');
+            $near = (string) ($in["{$side}_near_landmark_id"] ?? '');
+            if (!Pricing::isLandmark($near)) {
+                throw new HttpException(422, "Choose the known area closest to the {$label}", ['field' => "{$side}_near_landmark_id"]);
+            }
+            return [$near, $area];
+        }
+        if (!Pricing::isLandmark($id)) {
+            throw new HttpException(422, "Choose a valid {$label} area", ['field' => "{$side}_landmark_id"]);
+        }
+        return [$id, null];
     }
 
     public function createDelivery(): void {
         RateLimiter::hit($this->db, 'create:' . Http::clientIp(), 30, 3600);
         $in = Http::input();
 
-        $senderLandmark = (string) ($in['sender_landmark_id'] ?? '');
-        $recipientLandmark = (string) ($in['recipient_landmark_id'] ?? '');
-        if (!Pricing::isLandmark($senderLandmark)) {
-            throw new HttpException(422, 'Choose a valid pickup landmark', ['field' => 'sender_landmark_id']);
-        }
-        if (!Pricing::isLandmark($recipientLandmark)) {
-            throw new HttpException(422, 'Choose a valid drop-off landmark', ['field' => 'recipient_landmark_id']);
-        }
+        [$senderLandmark, $senderOther] = $this->resolveLocation($in, 'sender');
+        [$recipientLandmark, $recipientOther] = $this->resolveLocation($in, 'recipient');
+        $parcelSize = Http::oneOf($in, 'parcel_size', Pricing::SIZES, 'small');
+        $isFragile = !empty($in['is_fragile']);
+        $codAmount = Http::money($in, 'cod_amount', 5_000_000);
+        // Never trust a client-supplied fee.
+        $quote = Pricing::quote(Pricing::rates($this->db), $senderLandmark, $recipientLandmark, $parcelSize, $isFragile, $codAmount);
 
         $paymentMode = Http::oneOf($in, 'payment_mode', ['pay_on_delivery', 'prepaid'], 'pay_on_delivery');
         $data = [
@@ -66,20 +120,24 @@ class Api {
             'sender_name'               => Http::text($in, 'sender_name', 128, true, 'Sender name'),
             'sender_phone'              => Http::phone($in, 'sender_phone', 'Sender phone'),
             'sender_landmark_id'        => $senderLandmark,
+            'sender_other_area'         => $senderOther,
             'sender_landmark_detail'    => Http::text($in, 'sender_landmark_detail', 255, true, 'Pickup address'),
             'recipient_type'            => Http::oneOf($in, 'recipient_type', ['home', 'market', 'office'], 'home'),
             'recipient_name'            => Http::text($in, 'recipient_name', 128, true, 'Recipient name'),
             'recipient_phone'           => Http::phone($in, 'recipient_phone', 'Recipient phone'),
             'recipient_landmark_id'     => $recipientLandmark,
+            'recipient_other_area'      => $recipientOther,
             'recipient_landmark_detail' => Http::text($in, 'recipient_landmark_detail', 255, true, 'Delivery address'),
             'item_category'             => Http::text($in, 'item_category', 64, true, 'Item category'),
             'item_description'          => Http::text($in, 'item_description', 255, true, 'Parcel description'),
-            'is_fragile'                => !empty($in['is_fragile']) ? 1 : 0,
+            'is_fragile'                => $isFragile ? 1 : 0,
+            'parcel_size'               => $parcelSize,
             'special_instructions'      => Http::text($in, 'special_instructions', 255, false),
             'payment_mode'              => $paymentMode,
-            'cod_amount'                => Http::money($in, 'cod_amount', 5_000_000),
-            // Never trust a client-supplied fee.
-            'delivery_fee'              => Pricing::fare($senderLandmark, $recipientLandmark),
+            'cod_amount'                => $codAmount,
+            'delivery_fee'              => $quote['fee'],
+            'distance_km'               => $quote['km'],
+            'fee_breakdown'             => json_encode($quote['breakdown']),
         ];
 
         $id = Database::newId('del');
@@ -495,7 +553,7 @@ class Api {
             'name'        => Http::text($in + ['name' => $existing['name'] ?? ''], 'name', 128, true, 'Rider name'),
             'phone'       => Http::phone($in + ['phone' => $existing['phone'] ?? ''], 'phone', 'Rider phone'),
             'bike_number' => strtoupper(Http::text($in + ['bike_number' => $existing['bike_number'] ?? ''], 'bike_number', 32, true, 'Bike plate number')),
-            'active_zone' => Http::oneOf($in, 'active_zone', array_values(array_unique(Pricing::LANDMARK_ZONES)), $existing['active_zone'] ?? 'Z1_CENTRAL'),
+            'active_zone' => Http::oneOf($in, 'active_zone', Pricing::ZONES, $existing['active_zone'] ?? 'Z1_CENTRAL'),
             'active'      => array_key_exists('active', $in) ? (!empty($in['active']) ? 1 : 0) : (int) ($existing['active'] ?? 1),
         ];
 
@@ -758,14 +816,20 @@ class Api {
             'senderPhone'         => $row['sender_phone'],
             'senderLandmarkId'    => $row['sender_landmark_id'],
             'senderDetail'        => $row['sender_landmark_detail'],
+            'senderOtherArea'     => $row['sender_other_area'] ?? null,
             'recipientType'       => $row['recipient_type'],
             'recipientName'       => $row['recipient_name'],
             'recipientPhone'      => $row['recipient_phone'],
             'recipientLandmarkId' => $row['recipient_landmark_id'],
             'recipientDetail'     => $row['recipient_landmark_detail'],
+            'recipientOtherArea'  => $row['recipient_other_area'] ?? null,
             'itemCategory'        => $row['item_category'],
             'itemDescription'     => $row['item_description'],
             'isFragile'           => (bool) $row['is_fragile'],
+            'parcelSize'          => $row['parcel_size'] ?? 'small',
+            'distanceKm'          => isset($row['distance_km']) ? (float) $row['distance_km'] : null,
+            'feeBreakdown'        => isset($row['fee_breakdown']) ? json_decode($row['fee_breakdown'], true) : null,
+            'feeOverridden'       => (bool) ($row['fee_overridden'] ?? 0),
             'specialInstructions' => $row['special_instructions'],
             'paymentMode'         => $row['payment_mode'],
             'deliveryFee'         => (float) $row['delivery_fee'],

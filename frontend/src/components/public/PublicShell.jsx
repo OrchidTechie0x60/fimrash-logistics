@@ -2,6 +2,8 @@ import React from 'react';
 import { PackagePlus, Search, Phone } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { hrefFor, linkHandler } from '../../lib/router';
+import { OFFICE_ADDRESS } from '../../lib/business';
+import { isNativeApp } from '../../lib/native';
 
 const DESK_TEL = 'tel:08156661246';
 
@@ -104,11 +106,19 @@ export function PublicFooter() {
         <div className="space-y-3">
           <BrandLogo height={48} alt="Fimrash Logistics Services" />
           <p className="text-[#8fa8e8] max-w-sm">{t('footer.tagline')}</p>
+          <address className="not-italic text-sm text-[#c9d3f2] max-w-sm leading-relaxed">{OFFICE_ADDRESS}</address>
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-[#c9d3f2] font-semibold">
           <a href={hrefFor('booking')} onClick={linkHandler('booking')} className="hover:text-[#f1eadb]">{t('nav.send')}</a>
           <a href={hrefFor('tracking')} onClick={linkHandler('tracking')} className="hover:text-[#f1eadb]">{t('nav.track')}</a>
           <a href={DESK_TEL} className="hover:text-[#f1eadb] iw-num">0815 666 1246</a>
+          {/* The Android app has no address bar, so staff get a quiet way in. The website never shows these. */}
+          {isNativeApp() && (
+            <>
+              <a href={hrefFor('rider')} onClick={linkHandler('rider')} className="text-[#8fa8e8] font-normal hover:text-[#f1eadb]">Rider sign-in</a>
+              <a href={hrefFor('ledger')} onClick={linkHandler('ledger')} className="text-[#8fa8e8] font-normal hover:text-[#f1eadb]">Station sign-in</a>
+            </>
+          )}
           <span className="text-[#8fa8e8] font-normal">© {new Date().getFullYear()} · {t('footer.built')}</span>
         </div>
       </div>
