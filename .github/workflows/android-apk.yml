@@ -7,7 +7,7 @@
 #
 # Repository settings (Settings → Secrets and variables → Actions)
 #   Variables (optional; defaults shown):
-#     VITE_API_BASE_URL    https://fimrash.orchidbyte.com.ng/backend/public
+#     VITE_API_BASE_URL    https://api.fimrash.orchidbyte.com.ng
 #     VITE_PUBLIC_APP_URL  https://fimrash-logistics.vercel.app   (used in shared tracking links/QR codes)
 #   Secrets (optional; without them a debug-signed APK is produced, fine for sideloading to riders):
 #     ANDROID_KEYSTORE_BASE64   base64 of your release .jks file
@@ -35,7 +35,7 @@ jobs:
       run:
         working-directory: frontend
     env:
-      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://fimrash.orchidbyte.com.ng/backend/public' }}
+      VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://api.fimrash.orchidbyte.com.ng' }}
       VITE_PUBLIC_APP_URL: ${{ vars.VITE_PUBLIC_APP_URL || 'https://fimrash.orchidbyte.com.ng' }}
       APP_VERSION_CODE: ${{ github.run_number }}
       APP_VERSION_NAME: 1.0.${{ github.run_number }}
