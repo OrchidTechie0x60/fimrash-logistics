@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-11-18T13:19:49.516Z",
         "reason": "Claude: ops tab switcher; gray applies only to inactive tabs on a neutral slate track, the colored bg is the active branch of the same conditional (false positive flagged 3 times)"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "frontend/src/components/BookingForm.jsx"
+        ],
+        "createdAt": "2026-11-20T20:21:26.022Z",
+        "reason": "landmark chips: text switches to emerald-700 together with the emerald-50 hover background"
       }
     ]
   }

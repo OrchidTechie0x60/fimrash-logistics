@@ -6,6 +6,7 @@ import KanoRouteMap from './KanoRouteMap';
 import { createDelivery } from '../services/api';
 import { OFFICE_ADDRESS } from '../lib/business';
 import { saveMyBooking } from '../lib/myBookings';
+import { printPage } from '../lib/native';
 import { isNigerianMobile, naira, trackingUrl, whatsappNumber } from '../lib/format';
 import {
   MapPin, Navigation, Package, ShieldCheck, ArrowRight,
@@ -193,8 +194,14 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
     } catch { /* clipboard blocked */ }
   };
 
-  const handlePrintWaybill = () => {
-    window.print();
+  const [printError, setPrintError] = useState(null);
+  const handlePrintWaybill = async () => {
+    setPrintError(null);
+    try {
+      await printPage(`Fimrash waybill ${bookingSuccess?.trackingCode || ''}`.trim());
+    } catch (err) {
+      setPrintError(err?.message || 'Could not open the print screen.');
+    }
   };
 
   // SUCCESS WAYBILL PASS (Printable receipt with scannable tracking QR)
@@ -364,6 +371,9 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
               <Printer className="w-4 h-4" />
               <span>Print Waybill (no code)</span>
             </button>
+            {printError && (
+              <p role="alert" className="text-xs text-rose-600 dark:text-rose-400 sm:col-span-2">{printError}</p>
+            )}
 
             <button
               onClick={() => onNavigateToTracking(bookingSuccess.trackingCode)}
