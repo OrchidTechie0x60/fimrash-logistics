@@ -70,8 +70,53 @@ class Http {
         return $data;
     }
 
+    // Cloudflare's published edge ranges (https://www.cloudflare.com/ips/).
+    private const CLOUDFLARE_RANGES = [
+        '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22', '141.101.64.0/18',
+        '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20', '197.234.240.0/22', '198.41.128.0/17',
+        '162.158.0.0/15', '104.16.0.0/13', '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+        '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32', '2405:8100::/32',
+        '2a06:98c0::/29', '2c0f:f248::/32',
+    ];
+
+    // The visitor's IP, used for rate limits and login lockouts. Behind Cloudflare's proxy the
+    // connection comes from a Cloudflare edge, so the real visitor is read from CF-Connecting-IP,
+    // but only when the connection really is from Cloudflare (otherwise anyone could fake the header).
     public static function clientIp(): string {
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $remote = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $forwarded = trim($_SERVER['HTTP_CF_CONNECTING_IP'] ?? '');
+        if ($forwarded !== '' && filter_var($forwarded, FILTER_VALIDATE_IP) && self::isCloudflare($remote)) {
+            return $forwarded;
+        }
+        return $remote;
+    }
+
+    private static function isCloudflare(string $ip): bool {
+        $packed = @inet_pton($ip);
+        if ($packed === false) {
+            return false;
+        }
+        foreach (self::CLOUDFLARE_RANGES as $cidr) {
+            [$net, $bits] = explode('/', $cidr);
+            $netPacked = inet_pton($net);
+            if (strlen($netPacked) !== strlen($packed)) {
+                continue;
+            }
+            $bits = (int) $bits;
+            $bytes = intdiv($bits, 8);
+            if (substr($packed, 0, $bytes) !== substr($netPacked, 0, $bytes)) {
+                continue;
+            }
+            $rem = $bits % 8;
+            if ($rem === 0) {
+                return true;
+            }
+            $mask = (0xFF << (8 - $rem)) & 0xFF;
+            if ((ord($packed[$bytes]) & $mask) === (ord($netPacked[$bytes]) & $mask)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static function bearerToken(): ?string {
