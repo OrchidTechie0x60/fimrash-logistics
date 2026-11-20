@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useRefreshHandler } from '../lib/refresh';
 import KanoRouteMap from './KanoRouteMap';
 import { Search, CheckCircle2, ShieldCheck, Phone, AlertCircle, Copy, RefreshCw, XCircle } from 'lucide-react';
 import { trackDelivery } from '../services/api';
@@ -37,6 +38,8 @@ export default function LiveTracking({ trackingCode, onSearch }) {
       if (!quiet) setLoading(false);
     }
   }, []);
+
+  useRefreshHandler(() => (trackingCode ? load(trackingCode) : undefined));
 
   useEffect(() => {
     setSearchCode(trackingCode || '');

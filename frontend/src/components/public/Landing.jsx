@@ -5,7 +5,8 @@ import ResistMap from './ResistMap';
 import Stitch from './Stitch';
 import { useI18n } from '../../i18n';
 import { KANO_LANDMARKS, KANO_ZONES, getLandmark } from '../../data/kanoLandmarks';
-import { quote, usePricingRates } from '../../lib/pricing';
+import { quote, refreshPricingRates, usePricingRates } from '../../lib/pricing';
+import { useRefreshHandler } from '../../lib/refresh';
 import { OFFICE_ADDRESS } from '../../lib/business';
 import { hrefFor, linkHandler, navigate } from '../../lib/router';
 
@@ -65,6 +66,7 @@ export default function Landing() {
   const mapScroller = useRef(null);
 
   const rates = usePricingRates();
+  useRefreshHandler(refreshPricingRates);
   const heroQuote = quote(rates, fromId, toId);
   const fare = heroQuote.fee;
   const eta = heroQuote.minutes;

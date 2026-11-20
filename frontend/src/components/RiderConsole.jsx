@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useRefreshHandler } from '../lib/refresh';
 import {
   MapPin, Phone, ShieldCheck, CheckCircle2, AlertTriangle, Navigation, Package, RefreshCw, Wallet, Lock,
 } from 'lucide-react';
@@ -41,6 +42,8 @@ export default function RiderConsole({ currentUser, onUserChange }) {
       if (!quiet) setLoading(false);
     }
   }, []);
+
+  useRefreshHandler(() => load());
 
   useEffect(() => {
     load();

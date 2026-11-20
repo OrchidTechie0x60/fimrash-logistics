@@ -166,3 +166,8 @@ html.light .legacy .bg-slate-900 {
   background: rgba(156, 163, 175, 0.25);
   border-radius: 9999px;
 }
+
+/* Android app: our pull-to-refresh replaces the WebView's overscroll glow. */
+html.native-app, html.native-app body {
+  overscroll-behavior-y: none;
+}

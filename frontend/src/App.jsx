@@ -10,6 +10,7 @@ import { LanguageProvider } from './i18n';
 import { fetchMe, getToken, logout, onUnauthorized } from './services/api';
 import { navigate, useRoute, PUBLIC_TABS } from './lib/router';
 import { LogOut, Moon, Sun } from 'lucide-react';
+import PullToRefresh from './components/PullToRefresh';
 
 const readTheme = () => {
   try { return localStorage.getItem('fimrash_theme') || 'dark'; } catch { return 'dark'; }
@@ -92,6 +93,7 @@ export default function App() {
     return (
       <LanguageProvider>
         <div className="min-h-screen flex flex-col bg-[#14215c]">
+          <PullToRefresh />
           <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-[#f1eadb] focus:text-[#0b1240] focus:px-4 focus:py-2 focus:rounded-lg">
             Skip to content
           </a>
@@ -132,6 +134,7 @@ export default function App() {
 
   return (
     <div className="legacy skin-brand min-h-screen bg-ambient-grid flex flex-col">
+      <PullToRefresh />
       <InternalHeader
         title={role === 'rider' ? 'Fimrash · Courier' : 'Fimrash · Station Ops'}
         currentUser={currentUser?.role === role ? currentUser : null}

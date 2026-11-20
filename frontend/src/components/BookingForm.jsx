@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { KANO_LANDMARKS, KANO_ZONES, OTHER_AREA, getLandmark } from '../data/kanoLandmarks';
-import { PARCEL_SIZES, quote, usePricingRates } from '../lib/pricing';
+import { PARCEL_SIZES, quote, refreshPricingRates, usePricingRates } from '../lib/pricing';
+import { useRefreshHandler } from '../lib/refresh';
 import KanoRouteMap from './KanoRouteMap';
 import { createDelivery } from '../services/api';
 import { OFFICE_ADDRESS } from '../lib/business';
@@ -80,6 +81,8 @@ export default function BookingForm({ onNavigateToTracking, initialQuery = {} })
   const selectedRecipientLandmark = getLandmark(effectiveRecipient) || KANO_LANDMARKS[8];
 
   const rates = usePricingRates();
+  // Pull-to-refresh: update prices only, never touch what the sender has typed.
+  useRefreshHandler(refreshPricingRates);
   const codValue = formData.isCodActive ? Math.max(0, Number(formData.codAmount || 0)) : 0;
   const fareQuote = quote(rates, effectiveSender, effectiveRecipient, { size: formData.parcelSize, fragile: formData.isFragile, cod: codValue });
   const deliveryFee = fareQuote.fee;

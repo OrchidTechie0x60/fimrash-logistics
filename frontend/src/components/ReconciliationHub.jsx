@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useRefreshHandler } from '../lib/refresh';
 import {
   Wallet, Store, TrendingUp, Package, RefreshCw, Search, ShieldCheck, Users, Banknote, AlertTriangle, Lock, UserPlus, Calculator,
 } from 'lucide-react';
@@ -81,6 +82,7 @@ export default function ReconciliationHub() {
   }, []);
 
   useEffect(() => { refreshLedger(); }, [refreshLedger]);
+  useRefreshHandler(refreshLedger);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -164,6 +166,7 @@ function DeliveriesPanel({ riders, onChanged }) {
   }, []);
 
   useEffect(() => { load(filter, ''); }, [filter, load]);
+  useRefreshHandler(() => load(filter, query.trim()));
 
   const replace = (updated) => {
     setDeliveries((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
